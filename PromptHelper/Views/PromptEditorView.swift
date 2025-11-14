@@ -41,23 +41,26 @@ struct PromptEditorView: View {
 
     @ViewBuilder
     private func editorContent(viewModel: PromptEditorViewModel) -> some View {
+        @Bindable var bindableViewModel = viewModel
+        @Bindable var bindableTemplate = template
+
         Form {
             // Basis-Informationen
             Section("Informationen") {
-                TextField("Titel", text: $viewModel.editTitle)
+                TextField("Titel", text: $bindableViewModel.editTitle)
 
-                TextField("Beschreibung (optional)", text: $viewModel.editDescription, axis: .vertical)
+                TextField("Beschreibung (optional)", text: $bindableViewModel.editDescription, axis: .vertical)
                     .lineLimit(3...6)
             }
 
             // Content-Editor
             Section {
-                TextEditor(text: $viewModel.editContent)
+                TextEditor(text: $bindableViewModel.editContent)
                     .frame(minHeight: 200)
                     .font(.system(.body, design: .monospaced))
 
                 HStack {
-                    Text("\(viewModel.editContent.count) Zeichen")
+                    Text("\(bindableViewModel.editContent.count) Zeichen")
                         .font(.caption)
                         .foregroundStyle(.secondary)
 
@@ -113,10 +116,10 @@ struct PromptEditorView: View {
             // Tags
             Section("Tags") {
                 // Bestehende Tags
-                if !viewModel.editTags.isEmpty {
+                if !bindableViewModel.editTags.isEmpty {
                     ScrollView(.horizontal, showsIndicators: false) {
                         HStack {
-                            ForEach(viewModel.editTags, id: \.self) { tag in
+                            ForEach(bindableViewModel.editTags, id: \.self) { tag in
                                 HStack(spacing: 4) {
                                     Text(tag)
                                     Button {
@@ -138,7 +141,7 @@ struct PromptEditorView: View {
 
                 // Neuer Tag
                 HStack {
-                    TextField("Neuer Tag", text: $viewModel.newTagInput)
+                    TextField("Neuer Tag", text: $bindableViewModel.newTagInput)
                         .onSubmit {
                             viewModel.addTag()
                         }
@@ -146,7 +149,7 @@ struct PromptEditorView: View {
                     Button("Hinzufügen") {
                         viewModel.addTag()
                     }
-                    .disabled(viewModel.newTagInput.trimmingCharacters(in: .whitespaces).isEmpty)
+                    .disabled(bindableViewModel.newTagInput.trimmingCharacters(in: .whitespaces).isEmpty)
                 }
             }
 
@@ -158,7 +161,7 @@ struct PromptEditorView: View {
                     Label("Prompt generieren", systemImage: "wand.and.stars")
                 }
 
-                Toggle("Als Favorit markieren", isOn: $template.isFavorite)
+                Toggle("Als Favorit markieren", isOn: $bindableTemplate.isFavorite)
             }
         }
         .toolbar {
@@ -170,7 +173,7 @@ struct PromptEditorView: View {
         }
         .alert("Fehler", isPresented: .constant(viewModel.errorMessage != nil)) {
             Button("OK") {
-                viewModel.errorMessage = nil
+                bindableViewModel.errorMessage = nil
             }
         } message: {
             if let error = viewModel.errorMessage {
