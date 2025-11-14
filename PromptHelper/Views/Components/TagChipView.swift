@@ -15,32 +15,24 @@ struct TagChipView: View {
 
     var body: some View {
         Text(tag)
-            .font(.caption)
-            .fontWeight(isSelected ? .semibold : .regular)
-            .padding(.horizontal, 12)
-            .padding(.vertical, 7)
+            .font(DesignSystem.Typography.caption)
+            .fontWeight(isSelected ? .semibold : .medium)
+            .padding(.horizontal, DesignSystem.Spacing.sm)
+            .padding(.vertical, DesignSystem.Spacing.xs)
             .background(
-                Group {
-                    if isSelected {
-                        Capsule()
-                            .fill(Color.accentColor)
-                            .shadow(color: Color.accentColor.opacity(0.3), radius: 4, x: 0, y: 2)
-                    } else {
-                        Capsule()
-                            .fill(Color.gray.opacity(0.15))
-                    }
-                }
+                Capsule()
+                    .fill(isSelected ? DesignSystem.SemanticColor.accent : DesignSystem.SemanticColor.secondaryBackground)
             )
-            .foregroundStyle(isSelected ? .white : .primary)
+            .foregroundStyle(isSelected ? .white : DesignSystem.SemanticColor.primary)
             .overlay(
                 Capsule()
                     .strokeBorder(
-                        isSelected ? Color.clear : Color.gray.opacity(0.2),
+                        isSelected ? Color.clear : DesignSystem.SemanticColor.secondary.opacity(0.2),
                         lineWidth: 1
                     )
             )
             .scaleEffect(isSelected ? 1.0 : 0.98)
-            .animation(.spring(response: 0.3, dampingFraction: 0.7), value: isSelected)
+            .animation(DesignSystem.Animation.quick, value: isSelected)
             .onTapGesture {
                 onTap()
             }
