@@ -172,7 +172,7 @@ final class PersistenceController {
         // Platzhalter-Zuordnungen erstellen
         let placeholder1 = PromptTemplatePlaceholder(
             template: blogPostTemplate,
-            placeholder: themaPlaceholder,
+            placeholder: topicPlaceholder,
             isRequired: true,
             sortOrder: 0
         )

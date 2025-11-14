@@ -11,7 +11,7 @@ import SwiftData
 /// Liste aller Platzhalter-Definitionen
 struct PlaceholderListView: View {
     @Environment(\.modelContext) private var modelContext
-    @State private var viewModel: PlaceholderListViewModel
+    @State private var viewModel: PlaceholderListViewModel?
 
     /// Query für alle Platzhalter
     @Query(sort: \PlaceholderDefinition.label) private var allPlaceholders: [PlaceholderDefinition]
@@ -20,55 +20,60 @@ struct PlaceholderListView: View {
     @State private var selectedPlaceholder: PlaceholderDefinition?
 
     init() {
-        // Initialize viewModel with a temporary context
-        // It will be properly set in onAppear
-        let tempContext = ModelContext(PersistenceController.shared.container)
-        _viewModel = State(initialValue: PlaceholderListViewModel(context: tempContext))
+        // ViewModel will be initialized in onAppear with the correct context
     }
 
     var body: some View {
-        placeholderListContent
-            .navigationTitle("Platzhalter")
-            .toolbar {
-                ToolbarItem(placement: .primaryAction) {
-                    Button {
-                        createNewPlaceholder()
-                    } label: {
-                        Label("Neu", systemImage: "plus")
-                    }
+        Group {
+            if let viewModel = viewModel {
+                placeholderListContent(viewModel: viewModel)
+            } else {
+                ProgressView()
+            }
+        }
+        .navigationTitle("Platzhalter")
+        .toolbar {
+            ToolbarItem(placement: .primaryAction) {
+                Button {
+                    createNewPlaceholder()
+                } label: {
+                    Label("Neu", systemImage: "plus")
                 }
             }
-            .onAppear {
-                // Update viewModel with the correct context
-                if viewModel.context !== modelContext {
-                    viewModel = PlaceholderListViewModel(context: modelContext)
-                }
+        }
+        .onAppear {
+            // Update viewModel with the correct context
+            if viewModel == nil || viewModel?.context !== modelContext {
+                viewModel = PlaceholderListViewModel(context: modelContext)
             }
+        }
     }
 
     // MARK: - Subviews
 
     @ViewBuilder
-    private var placeholderListContent: some View {
+    private func placeholderListContent(viewModel: PlaceholderListViewModel) -> some View {
+        @Bindable var bindableViewModel = viewModel
+
         List {
             // Filter-Sektion
             Section {
                 HStack {
-                    TextField("Suchen...", text: $viewModel.searchText)
+                    TextField("Suchen...", text: $bindableViewModel.searchText)
                         .textFieldStyle(.roundedBorder)
 
                     Button {
-                        viewModel.showGlobalOnly.toggle()
+                        bindableViewModel.showGlobalOnly.toggle()
                     } label: {
-                        Image(systemName: viewModel.showGlobalOnly ? "globe" : "doc.text")
-                            .foregroundStyle(viewModel.showGlobalOnly ? .blue : .gray)
+                        Image(systemName: bindableViewModel.showGlobalOnly ? "globe" : "doc.text")
+                            .foregroundStyle(bindableViewModel.showGlobalOnly ? .blue : .gray)
                     }
                 }
             }
 
             // Platzhalter-Liste
             Section("Definitionen") {
-                let filteredPlaceholders = filterPlaceholders(allPlaceholders)
+                let filteredPlaceholders = filterPlaceholders(allPlaceholders, viewModel: viewModel)
 
                 if filteredPlaceholders.isEmpty {
                     ContentUnavailableView(
@@ -107,7 +112,7 @@ struct PlaceholderListView: View {
         }
         .alert("Fehler", isPresented: .constant(viewModel.errorMessage != nil)) {
             Button("OK") {
-                viewModel.errorMessage = nil
+                bindableViewModel.errorMessage = nil
             }
         } message: {
             if let error = viewModel.errorMessage {
@@ -118,7 +123,7 @@ struct PlaceholderListView: View {
 
     // MARK: - Helper Methods
 
-    private func filterPlaceholders(_ placeholders: [PlaceholderDefinition]) -> [PlaceholderDefinition] {
+    private func filterPlaceholders(_ placeholders: [PlaceholderDefinition], viewModel: PlaceholderListViewModel) -> [PlaceholderDefinition] {
         placeholders.filter { placeholder in
             // Global-Filter
             if viewModel.showGlobalOnly && !placeholder.isGlobal {
@@ -141,6 +146,7 @@ struct PlaceholderListView: View {
     }
 
     private func createNewPlaceholder() {
+        guard let viewModel = viewModel else { return }
         let newPlaceholder = viewModel.createPlaceholder()
         selectedPlaceholder = newPlaceholder
     }
