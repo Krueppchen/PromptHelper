@@ -35,6 +35,7 @@ struct PromptEditorView: View {
         }
         .navigationTitle("Template bearbeiten")
         .navigationBarTitleDisplayMode(.inline)
+        .background(DesignSystem.SemanticColor.background)
     }
 
     // MARK: - Subviews
@@ -226,17 +227,12 @@ struct PromptEditorView: View {
         }
         .overlay(alignment: .top) {
             if let success = viewModel.successMessage {
-                Text(success)
-                    .font(.headline)
-                    .padding()
-                    .background(.green)
-                    .foregroundStyle(.white)
-                    .clipShape(RoundedRectangle(cornerRadius: 10))
-                    .padding()
+                ModernToast(message: success, type: .success)
+                    .padding(.top, DesignSystem.Spacing.sm)
                     .transition(.move(edge: .top).combined(with: .opacity))
             }
         }
-        .animation(.easeInOut, value: viewModel.successMessage)
+        .animation(DesignSystem.Animation.smooth, value: viewModel.successMessage)
         .navigationDestination(isPresented: $showGenerator) {
             PromptGeneratorView(template: template)
         }

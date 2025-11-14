@@ -17,16 +17,17 @@ struct PlaceholderInputView: View {
     @State private var selectedMultiChoiceValues: Set<String> = []
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: DesignSystem.Spacing.sm) {
             // Label mit optional Beschreibung
-            VStack(alignment: .leading, spacing: 4) {
+            VStack(alignment: .leading, spacing: DesignSystem.Spacing.xxs) {
                 Text(placeholder.label)
-                    .font(.headline)
+                    .font(DesignSystem.Typography.bodyEmphasized)
+                    .foregroundStyle(DesignSystem.SemanticColor.primary)
 
                 if let description = placeholder.descriptionText, !description.isEmpty {
                     Text(description)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+                        .font(DesignSystem.Typography.caption)
+                        .foregroundStyle(DesignSystem.SemanticColor.secondary)
                 }
             }
 
@@ -34,12 +35,18 @@ struct PlaceholderInputView: View {
             switch placeholder.type {
             case .text:
                 TextField("Eingabe...", text: $value)
-                    .textFieldStyle(.roundedBorder)
+                    .font(DesignSystem.Typography.body)
+                    .padding(DesignSystem.Spacing.sm)
+                    .background(DesignSystem.SemanticColor.tertiaryBackground)
+                    .cornerRadius(DesignSystem.CornerRadius.sm)
 
             case .number:
                 TextField("Zahl eingeben...", text: $value)
                     .keyboardType(.decimalPad)
-                    .textFieldStyle(.roundedBorder)
+                    .font(DesignSystem.Typography.body)
+                    .padding(DesignSystem.Spacing.sm)
+                    .background(DesignSystem.SemanticColor.tertiaryBackground)
+                    .cornerRadius(DesignSystem.CornerRadius.sm)
 
             case .date:
                 DatePicker(
@@ -57,11 +64,17 @@ struct PlaceholderInputView: View {
                     ),
                     displayedComponents: [.date]
                 )
+                .font(DesignSystem.Typography.body)
 
             case .singleChoice:
                 if placeholder.options.isEmpty {
                     Text("Keine Optionen definiert")
-                        .foregroundStyle(.secondary)
+                        .font(DesignSystem.Typography.subheadline)
+                        .foregroundStyle(DesignSystem.SemanticColor.secondary)
+                        .padding(DesignSystem.Spacing.sm)
+                        .frame(maxWidth: .infinity, alignment: .center)
+                        .background(DesignSystem.SemanticColor.tertiaryBackground)
+                        .cornerRadius(DesignSystem.CornerRadius.sm)
                 } else {
                     Picker("Auswahl", selection: $value) {
                         Text("Bitte wählen...").tag("")
@@ -70,14 +83,20 @@ struct PlaceholderInputView: View {
                         }
                     }
                     .pickerStyle(.menu)
+                    .font(DesignSystem.Typography.body)
                 }
 
             case .multiChoice:
                 if placeholder.options.isEmpty {
                     Text("Keine Optionen definiert")
-                        .foregroundStyle(.secondary)
+                        .font(DesignSystem.Typography.subheadline)
+                        .foregroundStyle(DesignSystem.SemanticColor.secondary)
+                        .padding(DesignSystem.Spacing.sm)
+                        .frame(maxWidth: .infinity, alignment: .center)
+                        .background(DesignSystem.SemanticColor.tertiaryBackground)
+                        .cornerRadius(DesignSystem.CornerRadius.sm)
                 } else {
-                    VStack(alignment: .leading, spacing: 4) {
+                    VStack(alignment: .leading, spacing: DesignSystem.Spacing.xs) {
                         ForEach(placeholder.options, id: \.self) { option in
                             Toggle(option, isOn: Binding(
                                 get: {
@@ -93,6 +112,7 @@ struct PlaceholderInputView: View {
                                     value = selectedMultiChoiceValues.sorted().joined(separator: ", ")
                                 }
                             ))
+                            .font(DesignSystem.Typography.body)
                         }
                     }
                     .onAppear {

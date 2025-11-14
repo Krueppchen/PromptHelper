@@ -31,12 +31,15 @@ struct PromptListView: View {
     var body: some View {
         templateListContent
             .navigationTitle("Prompts")
+            .navigationBarTitleDisplayMode(.large)
             .toolbar {
                 ToolbarItem(placement: .primaryAction) {
                     Button {
-                        createNewTemplate()
+                        withAnimation(DesignSystem.Animation.smooth) {
+                            createNewTemplate()
+                        }
                     } label: {
-                        Label("Neu", systemImage: "plus")
+                        Label("Neu", systemImage: "plus.circle.fill")
                     }
                 }
             }
@@ -52,90 +55,38 @@ struct PromptListView: View {
 
     @ViewBuilder
     private var templateListContent: some View {
-        List {
-            // Filter-Sektion
-            Section {
-                HStack {
-                    TextField("Suchen...", text: $viewModel.searchText)
-                        .textFieldStyle(.roundedBorder)
+        ScrollView {
+            LazyVStack(spacing: DesignSystem.Spacing.md) {
+                // Search and Filter Bar
+                searchAndFilterBar
+                    .padding(.horizontal, DesignSystem.Spacing.md)
+                    .padding(.top, DesignSystem.Spacing.sm)
 
-                    Button {
-                        viewModel.showFavoritesOnly.toggle()
-                    } label: {
-                        Image(systemName: viewModel.showFavoritesOnly ? "star.fill" : "star")
-                            .foregroundStyle(viewModel.showFavoritesOnly ? .yellow : .gray)
-                    }
+                // Tag Filter
+                let availableTags = viewModel.getAllTags(from: allTemplates)
+                if !availableTags.isEmpty {
+                    tagFilterSection(tags: availableTags)
                 }
-            }
 
-            // Tag-Filter
-            let availableTags = viewModel.getAllTags(from: allTemplates)
-            if !availableTags.isEmpty {
-                Section("Tags") {
-                    ScrollView(.horizontal, showsIndicators: false) {
-                        HStack {
-                            ForEach(availableTags, id: \.self) { tag in
-                                TagChipView(
-                                    tag: tag,
-                                    isSelected: viewModel.selectedTag == tag
-                                ) {
-                                    if viewModel.selectedTag == tag {
-                                        viewModel.selectedTag = nil
-                                    } else {
-                                        viewModel.selectedTag = tag
-                                    }
-                                }
-                            }
-                        }
-                        .padding(.vertical, 4)
-                    }
-                }
-            }
-
-            // Template-Liste
-            Section("Templates") {
+                // Templates Grid
                 let filteredTemplates = filterTemplates(allTemplates)
-
                 if filteredTemplates.isEmpty {
-                    ContentUnavailableView(
-                        "Keine Templates gefunden",
-                        systemImage: "doc.text.magnifyingglass",
-                        description: Text("Erstellen Sie ein neues Template mit dem + Button")
+                    ModernEmptyState(
+                        icon: "doc.text.magnifyingglass",
+                        title: "Keine Templates gefunden",
+                        message: "Erstellen Sie ein neues Template mit dem + Button",
+                        action: createNewTemplate,
+                        actionLabel: "Neues Template"
                     )
+                    .padding(.top, DesignSystem.Spacing.xxl)
                 } else {
-                    ForEach(filteredTemplates) { template in
-                        TemplateRowView(template: template)
-                            .contentShape(Rectangle())
-                            .onTapGesture {
-                                selectedTemplate = template
-                            }
-                            .swipeActions(edge: .leading) {
-                                Button {
-                                    viewModel.toggleFavorite(template)
-                                } label: {
-                                    Label("Favorit", systemImage: template.isFavorite ? "star.fill" : "star")
-                                }
-                                .tint(.yellow)
-                            }
-                            .swipeActions(edge: .trailing) {
-                                Button(role: .destructive) {
-                                    viewModel.deleteTemplate(template)
-                                } label: {
-                                    Label("Löschen", systemImage: "trash")
-                                }
-
-                                Button {
-                                    let duplicate = viewModel.duplicateTemplate(template)
-                                    selectedTemplate = duplicate
-                                } label: {
-                                    Label("Duplizieren", systemImage: "doc.on.doc")
-                                }
-                                .tint(.blue)
-                            }
-                    }
+                    templatesGrid(filteredTemplates)
+                        .padding(.horizontal, DesignSystem.Spacing.md)
                 }
             }
+            .padding(.bottom, DesignSystem.Spacing.lg)
         }
+        .background(DesignSystem.SemanticColor.background)
         .navigationDestination(item: $selectedTemplate) { template in
             PromptEditorView(template: template)
         }
@@ -146,6 +97,111 @@ struct PromptListView: View {
         } message: {
             if let error = viewModel.errorMessage {
                 Text(error)
+            }
+        }
+    }
+
+    // MARK: - Subviews for List Content
+
+    private var searchAndFilterBar: some View {
+        ModernCard(padding: DesignSystem.Spacing.sm) {
+            HStack(spacing: DesignSystem.Spacing.sm) {
+                HStack(spacing: DesignSystem.Spacing.xs) {
+                    Image(systemName: "magnifyingglass")
+                        .font(.system(size: DesignSystem.IconSize.sm))
+                        .foregroundStyle(DesignSystem.SemanticColor.tertiary)
+
+                    TextField("Suchen...", text: $viewModel.searchText)
+                        .font(DesignSystem.Typography.body)
+                }
+                .padding(.horizontal, DesignSystem.Spacing.sm)
+                .padding(.vertical, DesignSystem.Spacing.xs)
+                .background(DesignSystem.SemanticColor.tertiaryBackground)
+                .cornerRadius(DesignSystem.CornerRadius.sm)
+
+                Button {
+                    withAnimation(DesignSystem.Animation.quick) {
+                        viewModel.showFavoritesOnly.toggle()
+                    }
+                } label: {
+                    Image(systemName: viewModel.showFavoritesOnly ? "star.fill" : "star")
+                        .font(.system(size: DesignSystem.IconSize.md, weight: .medium))
+                        .foregroundStyle(viewModel.showFavoritesOnly ? .yellow : DesignSystem.SemanticColor.secondary)
+                        .frame(width: 40, height: 40)
+                        .background(DesignSystem.SemanticColor.tertiaryBackground)
+                        .cornerRadius(DesignSystem.CornerRadius.sm)
+                }
+            }
+        }
+    }
+
+    private func tagFilterSection(tags: [String]) -> some View {
+        VStack(alignment: .leading, spacing: DesignSystem.Spacing.sm) {
+            Text("Tags")
+                .font(DesignSystem.Typography.caption)
+                .foregroundStyle(DesignSystem.SemanticColor.secondary)
+                .padding(.horizontal, DesignSystem.Spacing.md)
+
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: DesignSystem.Spacing.xs) {
+                    ForEach(tags, id: \.self) { tag in
+                        TagChipView(
+                            tag: tag,
+                            isSelected: viewModel.selectedTag == tag
+                        ) {
+                            withAnimation(DesignSystem.Animation.quick) {
+                                if viewModel.selectedTag == tag {
+                                    viewModel.selectedTag = nil
+                                } else {
+                                    viewModel.selectedTag = tag
+                                }
+                            }
+                        }
+                    }
+                }
+                .padding(.horizontal, DesignSystem.Spacing.md)
+            }
+        }
+    }
+
+    private func templatesGrid(_ templates: [PromptTemplate]) -> some View {
+        LazyVStack(spacing: DesignSystem.Spacing.md) {
+            ForEach(templates) { template in
+                ModernTemplateCard(template: template)
+                    .contentShape(Rectangle())
+                    .onTapGesture {
+                        withAnimation(DesignSystem.Animation.smooth) {
+                            selectedTemplate = template
+                        }
+                    }
+                    .contextMenu {
+                        Button {
+                            viewModel.toggleFavorite(template)
+                        } label: {
+                            Label(
+                                template.isFavorite ? "Favorit entfernen" : "Als Favorit markieren",
+                                systemImage: template.isFavorite ? "star.slash" : "star.fill"
+                            )
+                        }
+
+                        Button {
+                            let duplicate = viewModel.duplicateTemplate(template)
+                            selectedTemplate = duplicate
+                        } label: {
+                            Label("Duplizieren", systemImage: "doc.on.doc")
+                        }
+
+                        Divider()
+
+                        Button(role: .destructive) {
+                            withAnimation(DesignSystem.Animation.smooth) {
+                                viewModel.deleteTemplate(template)
+                            }
+                        } label: {
+                            Label("Löschen", systemImage: "trash")
+                        }
+                    }
+                    .transition(.scale.combined(with: .opacity))
             }
         }
     }
@@ -188,86 +244,86 @@ struct PromptListView: View {
     }
 }
 
-// MARK: - Template Row View
+// MARK: - Modern Template Card
 
-/// Zeilen-View für ein Template
-struct TemplateRowView: View {
+/// Moderne Card-View für ein Template
+struct ModernTemplateCard: View {
     let template: PromptTemplate
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack(alignment: .top, spacing: 12) {
-                // Icon Badge
-                ZStack {
-                    RoundedRectangle(cornerRadius: 10)
-                        .fill(template.isFavorite ? Color.yellow.opacity(0.2) : Color.accentColor.opacity(0.15))
-                        .frame(width: 44, height: 44)
+        ModernCard(padding: DesignSystem.Spacing.md) {
+            VStack(alignment: .leading, spacing: DesignSystem.Spacing.md) {
+                // Header mit Icon und Favorit-Badge
+                HStack(alignment: .top, spacing: DesignSystem.Spacing.md) {
+                    ModernIconBadge(
+                        icon: template.isFavorite ? "star.fill" : "doc.text.fill",
+                        size: 52,
+                        iconSize: DesignSystem.IconSize.lg,
+                        backgroundColor: template.isFavorite ? Color.yellow.opacity(0.2) : DesignSystem.SemanticColor.accent.opacity(0.15),
+                        foregroundColor: template.isFavorite ? .yellow : DesignSystem.SemanticColor.accent
+                    )
 
-                    Image(systemName: template.isFavorite ? "star.fill" : "doc.text")
-                        .font(.system(size: 18, weight: .semibold))
-                        .foregroundStyle(template.isFavorite ? .yellow : .accentColor)
+                    VStack(alignment: .leading, spacing: DesignSystem.Spacing.xs) {
+                        Text(template.title)
+                            .font(DesignSystem.Typography.title3)
+                            .foregroundStyle(DesignSystem.SemanticColor.primary)
+                            .lineLimit(2)
+
+                        if let description = template.descriptionText, !description.isEmpty {
+                            Text(description)
+                                .font(DesignSystem.Typography.subheadline)
+                                .foregroundStyle(DesignSystem.SemanticColor.secondary)
+                                .lineLimit(2)
+                        }
+                    }
+
+                    Spacer(minLength: 0)
+
+                    if template.isFavorite {
+                        Image(systemName: "star.circle.fill")
+                            .font(.system(size: DesignSystem.IconSize.md))
+                            .foregroundStyle(.yellow)
+                            .symbolRenderingMode(.hierarchical)
+                    }
                 }
 
-                // Content
-                VStack(alignment: .leading, spacing: 6) {
-                    Text(template.title)
-                        .font(.headline)
-                        .foregroundStyle(.primary)
-
-                    if let description = template.descriptionText, !description.isEmpty {
-                        Text(description)
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
-                            .lineLimit(2)
-                    }
-
-                    // Tags
-                    if !template.tags.isEmpty {
-                        ScrollView(.horizontal, showsIndicators: false) {
-                            HStack(spacing: 6) {
-                                ForEach(template.tags.prefix(3), id: \.self) { tag in
-                                    Text(tag)
-                                        .font(.caption2)
-                                        .padding(.horizontal, 8)
-                                        .padding(.vertical, 4)
-                                        .background(Color.accentColor.opacity(0.15))
-                                        .foregroundStyle(Color.accentColor)
-                                        .clipShape(Capsule())
-                                }
-                                if template.tags.count > 3 {
-                                    Text("+\(template.tags.count - 3)")
-                                        .font(.caption2)
-                                        .foregroundStyle(.secondary)
-                                        .padding(.horizontal, 4)
-                                }
+                // Tags
+                if !template.tags.isEmpty {
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        HStack(spacing: DesignSystem.Spacing.xs) {
+                            ForEach(template.tags.prefix(5), id: \.self) { tag in
+                                ModernBadge(text: tag, style: .accent)
+                            }
+                            if template.tags.count > 5 {
+                                ModernBadge(text: "+\(template.tags.count - 5)", style: .default)
                             }
                         }
                     }
+                }
 
-                    // Metadaten
-                    HStack(spacing: 12) {
-                        HStack(spacing: 4) {
-                            Image(systemName: "clock")
-                                .font(.caption2)
-                            Text(template.updatedAt.formatted(date: .abbreviated, time: .omitted))
-                                .font(.caption2)
-                        }
-                        .foregroundStyle(.secondary)
+                // Footer mit Metadaten
+                HStack(spacing: DesignSystem.Spacing.md) {
+                    Label(
+                        template.updatedAt.formatted(date: .abbreviated, time: .omitted),
+                        systemImage: "clock"
+                    )
+                    .font(DesignSystem.Typography.caption)
+                    .foregroundStyle(DesignSystem.SemanticColor.tertiary)
 
-                        if let placeholderCount = template.placeholders?.count, placeholderCount > 0 {
-                            HStack(spacing: 4) {
-                                Image(systemName: "curlybraces")
-                                    .font(.caption2)
-                                Text("\(placeholderCount)")
-                                    .font(.caption2)
-                            }
-                            .foregroundStyle(.secondary)
-                        }
+                    if let placeholderCount = template.placeholders?.count, placeholderCount > 0 {
+                        Label("\(placeholderCount)", systemImage: "curlybraces")
+                            .font(DesignSystem.Typography.caption)
+                            .foregroundStyle(DesignSystem.SemanticColor.tertiary)
                     }
+
+                    Spacer()
+
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: DesignSystem.IconSize.xs, weight: .semibold))
+                        .foregroundStyle(DesignSystem.SemanticColor.tertiary)
                 }
             }
         }
-        .padding(.vertical, 8)
     }
 }
 

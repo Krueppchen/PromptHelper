@@ -29,6 +29,7 @@ struct PromptGeneratorView: View {
         generatorContent
             .navigationTitle("Prompt generieren")
             .navigationBarTitleDisplayMode(.inline)
+            .background(DesignSystem.SemanticColor.background)
             .onAppear {
                 if viewModel.context !== modelContext {
                     viewModel = PromptGeneratorViewModel(template: template, context: modelContext)
@@ -209,23 +210,12 @@ struct PromptGeneratorView: View {
         }
         .overlay(alignment: .top) {
             if let success = viewModel.successMessage {
-                HStack(spacing: 8) {
-                    Image(systemName: "checkmark.circle.fill")
-                    Text(success)
-                        .fontWeight(.semibold)
-                }
-                .font(.subheadline)
-                .padding(.horizontal, 16)
-                .padding(.vertical, 12)
-                .background(.green)
-                .foregroundStyle(.white)
-                .clipShape(RoundedRectangle(cornerRadius: 12))
-                .shadow(color: .black.opacity(0.1), radius: 8, x: 0, y: 4)
-                .padding(.top, 8)
-                .transition(.move(edge: .top).combined(with: .opacity))
+                ModernToast(message: success, type: .success)
+                    .padding(.top, DesignSystem.Spacing.sm)
+                    .transition(.move(edge: .top).combined(with: .opacity))
             }
         }
-        .animation(.spring(response: 0.4, dampingFraction: 0.8), value: viewModel.successMessage)
+        .animation(DesignSystem.Animation.smooth, value: viewModel.successMessage)
     }
 }
 

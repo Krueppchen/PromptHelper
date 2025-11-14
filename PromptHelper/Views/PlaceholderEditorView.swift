@@ -152,6 +152,7 @@ struct PlaceholderEditorView: View {
         }
         .navigationTitle("Platzhalter bearbeiten")
         .navigationBarTitleDisplayMode(.inline)
+        .background(DesignSystem.SemanticColor.background)
         .toolbar {
             ToolbarItem(placement: .confirmationAction) {
                 Button("Speichern") {
@@ -170,17 +171,12 @@ struct PlaceholderEditorView: View {
         }
         .overlay(alignment: .top) {
             if let success = successMessage {
-                Text(success)
-                    .font(.headline)
-                    .padding()
-                    .background(.green)
-                    .foregroundStyle(.white)
-                    .clipShape(RoundedRectangle(cornerRadius: 10))
-                    .padding()
+                ModernToast(message: success, type: .success)
+                    .padding(.top, DesignSystem.Spacing.sm)
                     .transition(.move(edge: .top).combined(with: .opacity))
             }
         }
-        .animation(.easeInOut, value: successMessage)
+        .animation(DesignSystem.Animation.smooth, value: successMessage)
     }
 
     // MARK: - Helper Methods
