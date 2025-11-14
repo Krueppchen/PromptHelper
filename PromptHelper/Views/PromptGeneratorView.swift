@@ -17,53 +17,72 @@ struct PromptGeneratorView: View {
     let template: PromptTemplate
 
     /// ViewModel
-    @State private var viewModel: PromptGeneratorViewModel?
+    @State private var viewModel: PromptGeneratorViewModel
+
+    init(template: PromptTemplate) {
+        self.template = template
+        let tempContext = ModelContext(PersistenceController.shared.container)
+        _viewModel = State(initialValue: PromptGeneratorViewModel(template: template, context: tempContext))
+    }
 
     var body: some View {
-        Group {
-            if let viewModel = viewModel {
-                generatorContent(viewModel: viewModel)
-            } else {
-                ProgressView()
-                    .onAppear {
-                        viewModel = PromptGeneratorViewModel(template: template, context: modelContext)
-                    }
+        generatorContent
+            .navigationTitle("Prompt generieren")
+            .navigationBarTitleDisplayMode(.inline)
+            .onAppear {
+                if viewModel.context !== modelContext {
+                    viewModel = PromptGeneratorViewModel(template: template, context: modelContext)
+                }
             }
-        }
-        .navigationTitle("Prompt generieren")
-        .navigationBarTitleDisplayMode(.inline)
     }
 
     // MARK: - Subviews
 
     @ViewBuilder
-    private func generatorContent(viewModel: PromptGeneratorViewModel) -> some View {
+    private var generatorContent: some View {
         Form {
-            // Template-Info
+            // Template-Info mit verbessertem Design
             Section {
-                VStack(alignment: .leading, spacing: 8) {
-                    Text(template.title)
-                        .font(.headline)
+                HStack(spacing: 12) {
+                    ZStack {
+                        RoundedRectangle(cornerRadius: 10)
+                            .fill(Color.accentColor.opacity(0.15))
+                            .frame(width: 50, height: 50)
 
-                    if let description = template.descriptionText, !description.isEmpty {
-                        Text(description)
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
+                        Image(systemName: "doc.text.fill")
+                            .font(.system(size: 22, weight: .semibold))
+                            .foregroundStyle(.accentColor)
+                    }
+
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(template.title)
+                            .font(.headline)
+
+                        if let description = template.descriptionText, !description.isEmpty {
+                            Text(description)
+                                .font(.subheadline)
+                                .foregroundStyle(.secondary)
+                                .lineLimit(2)
+                        }
                     }
                 }
+                .padding(.vertical, 4)
             }
 
             // Platzhalter-Eingaben
-            Section("Platzhalter ausfüllen") {
+            Section {
                 let placeholders = viewModel.sortedPlaceholders
 
                 if placeholders.isEmpty {
-                    Text("Dieses Template hat keine Platzhalter")
-                        .foregroundStyle(.secondary)
+                    ContentUnavailableView(
+                        "Keine Platzhalter",
+                        systemImage: "curlybraces",
+                        description: Text("Dieses Template hat keine Platzhalter zum Ausfüllen")
+                    )
                 } else {
                     ForEach(placeholders, id: \.id) { templatePlaceholder in
                         if let placeholder = templatePlaceholder.placeholder {
-                            VStack(alignment: .leading, spacing: 4) {
+                            VStack(alignment: .leading, spacing: 8) {
                                 PlaceholderInputView(
                                     placeholder: placeholder,
                                     value: Binding(
@@ -80,66 +99,102 @@ struct PromptGeneratorView: View {
                                 )
 
                                 if templatePlaceholder.isRequired {
-                                    Label("Pflichtfeld", systemImage: "asterisk")
-                                        .font(.caption2)
-                                        .foregroundStyle(.orange)
+                                    HStack(spacing: 4) {
+                                        Image(systemName: "asterisk.circle.fill")
+                                            .font(.caption2)
+                                        Text("Pflichtfeld")
+                                            .font(.caption2)
+                                    }
+                                    .foregroundStyle(.orange)
                                 }
                             }
-                            .padding(.vertical, 4)
+                            .padding(.vertical, 6)
                         }
+                    }
+                }
+            } header: {
+                HStack {
+                    Text("Platzhalter ausfüllen")
+                    Spacer()
+                    if !viewModel.sortedPlaceholders.isEmpty {
+                        Text("\(viewModel.filledValues.count)/\(viewModel.sortedPlaceholders.count)")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
                     }
                 }
             }
 
             // Aktionen
-            Section {
-                Toggle("Live-Vorschau", isOn: $viewModel.showPreview)
-                    .onChange(of: viewModel.showPreview) { _, isOn in
-                        if isOn {
-                            viewModel.updatePreview()
-                        }
+            Section("Aktionen") {
+                Toggle(isOn: $viewModel.showPreview) {
+                    Label("Live-Vorschau", systemImage: "eye")
+                }
+                .onChange(of: viewModel.showPreview) { _, isOn in
+                    if isOn {
+                        viewModel.updatePreview()
                     }
+                }
 
                 Button {
                     viewModel.generatePrompt()
                 } label: {
-                    Label("Prompt generieren", systemImage: "wand.and.stars")
-                        .frame(maxWidth: .infinity)
+                    HStack {
+                        Label("Prompt generieren", systemImage: "wand.and.stars")
+                        Spacer()
+                        if !viewModel.allRequiredFilled {
+                            Text("Felder ausfüllen")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
                 }
                 .buttonStyle(.borderedProminent)
                 .disabled(!viewModel.allRequiredFilled)
 
-                Button {
+                Button(role: .destructive) {
                     viewModel.reset()
                 } label: {
                     Label("Zurücksetzen", systemImage: "arrow.counterclockwise")
                 }
             }
 
-            // Generierter Prompt
+            // Generierter Prompt mit verbessertem Design
             if !viewModel.generatedPrompt.isEmpty {
-                Section("Generierter Prompt") {
-                    Text(viewModel.generatedPrompt)
-                        .font(.system(.body, design: .monospaced))
-                        .textSelection(.enabled)
-                        .padding()
-                        .background(Color.gray.opacity(0.1))
-                        .clipShape(RoundedRectangle(cornerRadius: 8))
+                Section {
+                    VStack(alignment: .leading, spacing: 12) {
+                        Text(viewModel.generatedPrompt)
+                            .font(.system(.body, design: .monospaced))
+                            .textSelection(.enabled)
+                            .padding(12)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .background(
+                                RoundedRectangle(cornerRadius: 10)
+                                    .fill(Color.secondary.opacity(0.1))
+                            )
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 10)
+                                    .strokeBorder(Color.secondary.opacity(0.2), lineWidth: 1)
+                            )
 
-                    HStack {
-                        Text("\(viewModel.generatedPrompt.count) Zeichen")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
+                        HStack(spacing: 16) {
+                            Label("\(viewModel.generatedPrompt.count)", systemImage: "textformat.size")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
 
-                        Spacer()
+                            Spacer()
 
-                        Button {
-                            viewModel.copyToClipboard()
-                        } label: {
-                            Label("Kopieren", systemImage: "doc.on.doc")
+                            Button {
+                                viewModel.copyToClipboard()
+                            } label: {
+                                Label("Kopieren", systemImage: "doc.on.doc")
+                                    .font(.subheadline)
+                            }
+                            .buttonStyle(.borderedProminent)
                         }
-                        .buttonStyle(.bordered)
                     }
+                } header: {
+                    Label("Generierter Prompt", systemImage: "checkmark.circle.fill")
+                        .foregroundStyle(.green)
                 }
             }
         }
@@ -154,17 +209,23 @@ struct PromptGeneratorView: View {
         }
         .overlay(alignment: .top) {
             if let success = viewModel.successMessage {
-                Text(success)
-                    .font(.headline)
-                    .padding()
-                    .background(.green)
-                    .foregroundStyle(.white)
-                    .clipShape(RoundedRectangle(cornerRadius: 10))
-                    .padding()
-                    .transition(.move(edge: .top).combined(with: .opacity))
+                HStack(spacing: 8) {
+                    Image(systemName: "checkmark.circle.fill")
+                    Text(success)
+                        .fontWeight(.semibold)
+                }
+                .font(.subheadline)
+                .padding(.horizontal, 16)
+                .padding(.vertical, 12)
+                .background(.green)
+                .foregroundStyle(.white)
+                .clipShape(RoundedRectangle(cornerRadius: 12))
+                .shadow(color: .black.opacity(0.1), radius: 8, x: 0, y: 4)
+                .padding(.top, 8)
+                .transition(.move(edge: .top).combined(with: .opacity))
             }
         }
-        .animation(.easeInOut, value: viewModel.successMessage)
+        .animation(.spring(response: 0.4, dampingFraction: 0.8), value: viewModel.successMessage)
     }
 }
 

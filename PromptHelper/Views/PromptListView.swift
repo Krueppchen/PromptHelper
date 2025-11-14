@@ -11,7 +11,7 @@ import SwiftData
 /// Haupt-View für die Anzeige aller Prompt-Templates
 struct PromptListView: View {
     @Environment(\.modelContext) private var modelContext
-    @State private var viewModel: PromptListViewModel?
+    @State private var viewModel: PromptListViewModel
 
     /// Query für alle Templates
     @Query(sort: \PromptTemplate.updatedAt, order: .reverse) private var allTemplates: [PromptTemplate]
@@ -21,33 +21,37 @@ struct PromptListView: View {
     @State private var isCreatingNew = false
     @State private var showTagFilter = false
 
+    init() {
+        // Initialize viewModel with a temporary context
+        // It will be properly set in onAppear
+        let tempContext = ModelContext(PersistenceController.shared.container)
+        _viewModel = State(initialValue: PromptListViewModel(context: tempContext))
+    }
+
     var body: some View {
-        Group {
-            if let viewModel = viewModel {
-                templateListContent(viewModel: viewModel)
-            } else {
-                ProgressView()
-                    .onAppear {
-                        viewModel = PromptListViewModel(context: modelContext)
+        templateListContent
+            .navigationTitle("Prompts")
+            .toolbar {
+                ToolbarItem(placement: .primaryAction) {
+                    Button {
+                        createNewTemplate()
+                    } label: {
+                        Label("Neu", systemImage: "plus")
                     }
-            }
-        }
-        .navigationTitle("Prompts")
-        .toolbar {
-            ToolbarItem(placement: .primaryAction) {
-                Button {
-                    createNewTemplate()
-                } label: {
-                    Label("Neu", systemImage: "plus")
                 }
             }
-        }
+            .onAppear {
+                // Update viewModel with the correct context
+                if viewModel.context !== modelContext {
+                    viewModel = PromptListViewModel(context: modelContext)
+                }
+            }
     }
 
     // MARK: - Subviews
 
     @ViewBuilder
-    private func templateListContent(viewModel: PromptListViewModel) -> some View {
+    private var templateListContent: some View {
         List {
             // Filter-Sektion
             Section {
@@ -90,7 +94,7 @@ struct PromptListView: View {
 
             // Template-Liste
             Section("Templates") {
-                let filteredTemplates = filterTemplates(allTemplates, with: viewModel)
+                let filteredTemplates = filterTemplates(allTemplates)
 
                 if filteredTemplates.isEmpty {
                     ContentUnavailableView(
@@ -148,7 +152,7 @@ struct PromptListView: View {
 
     // MARK: - Helper Methods
 
-    private func filterTemplates(_ templates: [PromptTemplate], with viewModel: PromptListViewModel) -> [PromptTemplate] {
+    private func filterTemplates(_ templates: [PromptTemplate]) -> [PromptTemplate] {
         templates.filter { template in
             // Favoriten-Filter
             if viewModel.showFavoritesOnly && !template.isFavorite {
@@ -179,7 +183,6 @@ struct PromptListView: View {
     }
 
     private func createNewTemplate() {
-        guard let viewModel = viewModel else { return }
         let newTemplate = viewModel.createTemplate()
         selectedTemplate = newTemplate
     }
@@ -192,57 +195,79 @@ struct TemplateRowView: View {
     let template: PromptTemplate
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack {
-                Text(template.title)
-                    .font(.headline)
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(alignment: .top, spacing: 12) {
+                // Icon Badge
+                ZStack {
+                    RoundedRectangle(cornerRadius: 10)
+                        .fill(template.isFavorite ? Color.yellow.opacity(0.2) : Color.accentColor.opacity(0.15))
+                        .frame(width: 44, height: 44)
 
-                Spacer()
-
-                if template.isFavorite {
-                    Image(systemName: "star.fill")
-                        .foregroundStyle(.yellow)
-                        .font(.caption)
+                    Image(systemName: template.isFavorite ? "star.fill" : "doc.text")
+                        .font(.system(size: 18, weight: .semibold))
+                        .foregroundStyle(template.isFavorite ? .yellow : .accentColor)
                 }
-            }
 
-            if let description = template.descriptionText, !description.isEmpty {
-                Text(description)
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                    .lineLimit(2)
-            }
+                // Content
+                VStack(alignment: .leading, spacing: 6) {
+                    Text(template.title)
+                        .font(.headline)
+                        .foregroundStyle(.primary)
 
-            // Tags
-            if !template.tags.isEmpty {
-                ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: 6) {
-                        ForEach(template.tags, id: \.self) { tag in
-                            TagChipView(tag: tag, isSelected: false) { }
+                    if let description = template.descriptionText, !description.isEmpty {
+                        Text(description)
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                            .lineLimit(2)
+                    }
+
+                    // Tags
+                    if !template.tags.isEmpty {
+                        ScrollView(.horizontal, showsIndicators: false) {
+                            HStack(spacing: 6) {
+                                ForEach(template.tags.prefix(3), id: \.self) { tag in
+                                    Text(tag)
+                                        .font(.caption2)
+                                        .padding(.horizontal, 8)
+                                        .padding(.vertical, 4)
+                                        .background(Color.accentColor.opacity(0.15))
+                                        .foregroundStyle(.accentColor)
+                                        .clipShape(Capsule())
+                                }
+                                if template.tags.count > 3 {
+                                    Text("+\(template.tags.count - 3)")
+                                        .font(.caption2)
+                                        .foregroundStyle(.secondary)
+                                        .padding(.horizontal, 4)
+                                }
+                            }
+                        }
+                    }
+
+                    // Metadaten
+                    HStack(spacing: 12) {
+                        HStack(spacing: 4) {
+                            Image(systemName: "clock")
+                                .font(.caption2)
+                            Text(template.updatedAt.formatted(date: .abbreviated, time: .omitted))
+                                .font(.caption2)
+                        }
+                        .foregroundStyle(.secondary)
+
+                        if let placeholderCount = template.placeholders?.count, placeholderCount > 0 {
+                            HStack(spacing: 4) {
+                                Image(systemName: "curlybraces")
+                                    .font(.caption2)
+                                Text("\(placeholderCount)")
+                                    .font(.caption2)
+                            }
+                            .foregroundStyle(.secondary)
                         }
                     }
                 }
             }
-
-            // Metadaten
-            HStack {
-                Label(
-                    template.updatedAt.formatted(date: .abbreviated, time: .shortened),
-                    systemImage: "clock"
-                )
-                .font(.caption)
-                .foregroundStyle(.secondary)
-
-                Spacer()
-
-                if let placeholderCount = template.placeholders?.count, placeholderCount > 0 {
-                    Label("\(placeholderCount)", systemImage: "curlybraces")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-            }
         }
-        .padding(.vertical, 4)
+        .padding(.vertical, 8)
     }
 }
 

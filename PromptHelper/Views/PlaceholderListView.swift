@@ -11,7 +11,7 @@ import SwiftData
 /// Liste aller Platzhalter-Definitionen
 struct PlaceholderListView: View {
     @Environment(\.modelContext) private var modelContext
-    @State private var viewModel: PlaceholderListViewModel?
+    @State private var viewModel: PlaceholderListViewModel
 
     /// Query für alle Platzhalter
     @Query(sort: \PlaceholderDefinition.label) private var allPlaceholders: [PlaceholderDefinition]
@@ -19,33 +19,37 @@ struct PlaceholderListView: View {
     /// Navigation-State
     @State private var selectedPlaceholder: PlaceholderDefinition?
 
+    init() {
+        // Initialize viewModel with a temporary context
+        // It will be properly set in onAppear
+        let tempContext = ModelContext(PersistenceController.shared.container)
+        _viewModel = State(initialValue: PlaceholderListViewModel(context: tempContext))
+    }
+
     var body: some View {
-        Group {
-            if let viewModel = viewModel {
-                placeholderListContent(viewModel: viewModel)
-            } else {
-                ProgressView()
-                    .onAppear {
-                        viewModel = PlaceholderListViewModel(context: modelContext)
+        placeholderListContent
+            .navigationTitle("Platzhalter")
+            .toolbar {
+                ToolbarItem(placement: .primaryAction) {
+                    Button {
+                        createNewPlaceholder()
+                    } label: {
+                        Label("Neu", systemImage: "plus")
                     }
-            }
-        }
-        .navigationTitle("Platzhalter")
-        .toolbar {
-            ToolbarItem(placement: .primaryAction) {
-                Button {
-                    createNewPlaceholder()
-                } label: {
-                    Label("Neu", systemImage: "plus")
                 }
             }
-        }
+            .onAppear {
+                // Update viewModel with the correct context
+                if viewModel.context !== modelContext {
+                    viewModel = PlaceholderListViewModel(context: modelContext)
+                }
+            }
     }
 
     // MARK: - Subviews
 
     @ViewBuilder
-    private func placeholderListContent(viewModel: PlaceholderListViewModel) -> some View {
+    private var placeholderListContent: some View {
         List {
             // Filter-Sektion
             Section {
@@ -64,7 +68,7 @@ struct PlaceholderListView: View {
 
             // Platzhalter-Liste
             Section("Definitionen") {
-                let filteredPlaceholders = filterPlaceholders(allPlaceholders, with: viewModel)
+                let filteredPlaceholders = filterPlaceholders(allPlaceholders)
 
                 if filteredPlaceholders.isEmpty {
                     ContentUnavailableView(
@@ -114,10 +118,7 @@ struct PlaceholderListView: View {
 
     // MARK: - Helper Methods
 
-    private func filterPlaceholders(
-        _ placeholders: [PlaceholderDefinition],
-        with viewModel: PlaceholderListViewModel
-    ) -> [PlaceholderDefinition] {
+    private func filterPlaceholders(_ placeholders: [PlaceholderDefinition]) -> [PlaceholderDefinition] {
         placeholders.filter { placeholder in
             // Global-Filter
             if viewModel.showGlobalOnly && !placeholder.isGlobal {
@@ -140,7 +141,6 @@ struct PlaceholderListView: View {
     }
 
     private func createNewPlaceholder() {
-        guard let viewModel = viewModel else { return }
         let newPlaceholder = viewModel.createPlaceholder()
         selectedPlaceholder = newPlaceholder
     }
@@ -153,63 +153,110 @@ struct PlaceholderRowView: View {
     let placeholder: PlaceholderDefinition
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(placeholder.label)
-                        .font(.headline)
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(alignment: .top, spacing: 12) {
+                // Icon Badge
+                ZStack {
+                    RoundedRectangle(cornerRadius: 10)
+                        .fill(Color.accentColor.opacity(0.15))
+                        .frame(width: 44, height: 44)
+
+                    Image(systemName: placeholder.type.iconName)
+                        .font(.system(size: 18, weight: .semibold))
+                        .foregroundStyle(.accentColor)
+                }
+
+                // Content
+                VStack(alignment: .leading, spacing: 6) {
+                    HStack {
+                        Text(placeholder.label)
+                            .font(.headline)
+                            .foregroundStyle(.primary)
+
+                        Spacer()
+
+                        if placeholder.isGlobal {
+                            Image(systemName: "globe")
+                                .font(.caption)
+                                .foregroundStyle(.blue)
+                                .padding(.horizontal, 8)
+                                .padding(.vertical, 4)
+                                .background(Color.blue.opacity(0.12))
+                                .clipShape(Capsule())
+                        }
+                    }
 
                     Text("{{\(placeholder.key)}}")
                         .font(.system(.caption, design: .monospaced))
                         .foregroundStyle(.secondary)
-                }
-
-                Spacer()
-
-                VStack(alignment: .trailing, spacing: 4) {
-                    Text(placeholder.type.displayName)
-                        .font(.caption)
                         .padding(.horizontal, 8)
-                        .padding(.vertical, 4)
-                        .background(Color.accentColor.opacity(0.2))
-                        .clipShape(Capsule())
+                        .padding(.vertical, 3)
+                        .background(Color.secondary.opacity(0.1))
+                        .clipShape(RoundedRectangle(cornerRadius: 6))
 
-                    if placeholder.isGlobal {
-                        Label("Global", systemImage: "globe")
-                            .font(.caption2)
-                            .foregroundStyle(.blue)
+                    if let description = placeholder.descriptionText, !description.isEmpty {
+                        Text(description)
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                            .lineLimit(2)
+                            .padding(.top, 2)
                     }
-                }
-            }
 
-            if let description = placeholder.descriptionText, !description.isEmpty {
-                Text(description)
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                    .lineLimit(2)
-            }
+                    // Type Badge
+                    HStack(spacing: 8) {
+                        Text(placeholder.type.displayName)
+                            .font(.caption2)
+                            .fontWeight(.medium)
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 4)
+                            .background(Color.accentColor)
+                            .foregroundStyle(.white)
+                            .clipShape(Capsule())
 
-            if placeholder.type.requiresOptions && !placeholder.options.isEmpty {
-                ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: 4) {
-                        ForEach(placeholder.options.prefix(5), id: \.self) { option in
-                            Text(option)
-                                .font(.caption2)
-                                .padding(.horizontal, 6)
-                                .padding(.vertical, 3)
-                                .background(Color.gray.opacity(0.2))
-                                .clipShape(Capsule())
-                        }
-                        if placeholder.options.count > 5 {
-                            Text("+\(placeholder.options.count - 5)")
+                        if placeholder.type.requiresOptions && !placeholder.options.isEmpty {
+                            Text("\(placeholder.options.count) Optionen")
                                 .font(.caption2)
                                 .foregroundStyle(.secondary)
                         }
                     }
                 }
             }
+
+            // Options Preview
+            if placeholder.type.requiresOptions && !placeholder.options.isEmpty {
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 6) {
+                        ForEach(placeholder.options.prefix(5), id: \.self) { option in
+                            Text(option)
+                                .font(.caption2)
+                                .padding(.horizontal, 8)
+                                .padding(.vertical, 4)
+                                .background(Color.gray.opacity(0.15))
+                                .clipShape(Capsule())
+                        }
+                        if placeholder.options.count > 5 {
+                            Text("+\(placeholder.options.count - 5) mehr")
+                                .font(.caption2)
+                                .foregroundStyle(.secondary)
+                                .padding(.horizontal, 8)
+                        }
+                    }
+                }
+            }
         }
-        .padding(.vertical, 4)
+        .padding(.vertical, 8)
+    }
+}
+
+extension PlaceholderType {
+    var iconName: String {
+        switch self {
+        case .text: return "textformat"
+        case .number: return "number"
+        case .date: return "calendar"
+        case .singleChoice: return "list.bullet.circle"
+        case .multiChoice: return "checklist"
+        }
     }
 }
 
