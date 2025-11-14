@@ -23,7 +23,7 @@ final class PlaceholderListViewModel {
     var errorMessage: String?
 
     /// ModelContext für Datenbank-Operationen
-    private let context: ModelContext
+    let context: ModelContext
 
     /// Service für Platzhalter-Verwaltung
     private let detectionService = PlaceholderDetectionService()

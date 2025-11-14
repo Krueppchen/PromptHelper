@@ -26,7 +26,7 @@ final class PromptListViewModel {
     var errorMessage: String?
 
     /// ModelContext für Datenbank-Operationen
-    private let context: ModelContext
+    let context: ModelContext
 
     // MARK: - Initialisierung
 

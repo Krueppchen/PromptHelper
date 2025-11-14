@@ -42,7 +42,12 @@ extension String {
 
     /// Prüft, ob der String noch nicht ausgefüllte Platzhalter enthält
     func hasUnfilledPlaceholders() -> Bool {
-        return self.contains(try! NSRegularExpression(pattern: "\\{\\{[^}]+\\}\\}"))
+        let pattern = "\\{\\{[^}]+\\}\\}"
+        guard let regex = try? NSRegularExpression(pattern: pattern, options: []) else {
+            return false
+        }
+        let range = NSRange(location: 0, length: self.utf16.count)
+        return regex.firstMatch(in: self, options: [], range: range) != nil
     }
 
     /// Findet alle nicht ausgefüllten Platzhalter-Keys

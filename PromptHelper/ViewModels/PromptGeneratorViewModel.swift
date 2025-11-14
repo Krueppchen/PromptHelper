@@ -32,7 +32,7 @@ final class PromptGeneratorViewModel {
     var successMessage: String?
 
     /// ModelContext für Datenbank-Operationen
-    private let context: ModelContext
+    let context: ModelContext
 
     /// Render-Service
     private let renderService = PromptRenderService()
