@@ -1,0 +1,18 @@
+//
+//  Item.swift
+//  PromptHelper
+//
+//  Created by Tim Stürenburg on 14.11.25.
+//
+
+import Foundation
+import SwiftData
+
+@Model
+final class Item {
+    var timestamp: Date
+    
+    init(timestamp: Date) {
+        self.timestamp = timestamp
+    }
+}
