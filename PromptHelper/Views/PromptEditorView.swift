@@ -58,6 +58,50 @@ struct PromptEditorView: View {
                 TextEditor(text: $bindableViewModel.editContent)
                     .frame(minHeight: 200)
                     .font(.system(.body, design: .monospaced))
+                    .toolbar {
+                        ToolbarItemGroup(placement: .keyboard) {
+                            ScrollView(.horizontal, showsIndicators: false) {
+                                HStack(spacing: 12) {
+                                    // Platzhalter einfügen
+                                    Button {
+                                        insertPlaceholder(into: $bindableViewModel.editContent)
+                                    } label: {
+                                        Label("Platzhalter", systemImage: "curlybraces")
+                                            .padding(.horizontal, 12)
+                                            .padding(.vertical, 6)
+                                            .background(Color.accentColor)
+                                            .foregroundStyle(.white)
+                                            .clipShape(Capsule())
+                                    }
+
+                                    // Einzelne Klammern für manuelle Eingabe
+                                    Button {
+                                        bindableViewModel.editContent += "{{"
+                                    } label: {
+                                        Text("{{")
+                                            .font(.system(.body, design: .monospaced))
+                                            .padding(.horizontal, 10)
+                                            .padding(.vertical, 6)
+                                            .background(Color.secondary.opacity(0.2))
+                                            .clipShape(RoundedRectangle(cornerRadius: 6))
+                                    }
+
+                                    Button {
+                                        bindableViewModel.editContent += "}}"
+                                    } label: {
+                                        Text("}}")
+                                            .font(.system(.body, design: .monospaced))
+                                            .padding(.horizontal, 10)
+                                            .padding(.vertical, 6)
+                                            .background(Color.secondary.opacity(0.2))
+                                            .clipShape(RoundedRectangle(cornerRadius: 6))
+                                    }
+
+                                    Spacer()
+                                }
+                            }
+                        }
+                    }
 
                 HStack {
                     Text("\(bindableViewModel.editContent.count) Zeichen")
@@ -74,7 +118,7 @@ struct PromptEditorView: View {
             } header: {
                 Text("Prompt-Inhalt")
             } footer: {
-                Text("Verwenden Sie {{key}} für Platzhalter")
+                Text("Verwenden Sie {{key}} für Platzhalter oder nutzen Sie die Tastatur-Toolbar")
             }
 
             // Platzhalter-Verwaltung
@@ -196,6 +240,14 @@ struct PromptEditorView: View {
         .navigationDestination(isPresented: $showGenerator) {
             PromptGeneratorView(template: template)
         }
+    }
+
+    // MARK: - Helper Methods
+
+    /// Fügt einen Platzhalter an der aktuellen Position ein
+    private func insertPlaceholder(into binding: Binding<String>) {
+        // Füge Platzhalter-Template ein
+        binding.wrappedValue += "{{}}"
     }
 }
 
