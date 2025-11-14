@@ -51,7 +51,7 @@ struct PromptGeneratorView: View {
 
                         Image(systemName: "doc.text.fill")
                             .font(.system(size: 22, weight: .semibold))
-                            .foregroundStyle(.accentColor)
+                            .foregroundStyle(Color.accentColor)
                     }
 
                     VStack(alignment: .leading, spacing: 4) {

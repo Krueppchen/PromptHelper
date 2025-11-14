@@ -169,7 +169,7 @@ struct PlaceholderRowView: View {
 
                     Image(systemName: placeholder.type.iconName)
                         .font(.system(size: 18, weight: .semibold))
-                        .foregroundStyle(.accentColor)
+                        .foregroundStyle(Color.accentColor)
                 }
 
                 // Content
