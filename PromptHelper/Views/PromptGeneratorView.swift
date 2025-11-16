@@ -43,46 +43,18 @@ struct PromptGeneratorView: View {
     private var generatorContent: some View {
         ZStack(alignment: .bottom) {
             VStack(spacing: 0) {
-                // Kompakter Header
-                VStack(spacing: 8) {
-                    Text(template.title)
-                        .font(.title3.weight(.semibold))
-
-                    if !viewModel.sortedPlaceholders.isEmpty {
-                        let filled = viewModel.filledValues.filter { !$0.value.isEmpty }.count
-                        let total = viewModel.sortedPlaceholders.count
-                        HStack(spacing: 4) {
-                            Image(systemName: filled == total ? "checkmark.circle.fill" : "circle.dashed")
-                                .foregroundStyle(filled == total ? .green : .secondary)
-                            Text("\(filled) von \(total) ausgefüllt")
-                                .font(.subheadline)
-                                .foregroundStyle(.secondary)
-                        }
-                    }
-                }
-                .padding(.vertical, 12)
-                .frame(maxWidth: .infinity)
-                .background(.ultraThinMaterial)
-
-                Divider()
-
                 // Platzhalter-Liste
                 ScrollView {
-                    VStack(spacing: 20) {
+                    VStack(spacing: 16) {
                         let placeholders = viewModel.sortedPlaceholders
 
                         if placeholders.isEmpty {
-                            VStack(spacing: 12) {
-                                Image(systemName: "checkmark.circle")
-                                    .font(.system(size: 48))
-                                    .foregroundStyle(.green)
-                                Text("Keine Platzhalter")
-                                    .font(.headline)
-                                Text("Dieses Template ist bereit zur Verwendung")
-                                    .font(.subheadline)
-                                    .foregroundStyle(.secondary)
-                            }
-                            .padding(.top, 60)
+                            ModernEmptyState(
+                                icon: "checkmark.circle",
+                                title: "Bereit zur Verwendung",
+                                message: "Dieses Template hat keine Platzhalter"
+                            )
+                            .padding(.top, 40)
                         } else {
                             ForEach(placeholders, id: \.id) { templatePlaceholder in
                                 if let placeholder = templatePlaceholder.placeholder {
@@ -101,65 +73,74 @@ struct PromptGeneratorView: View {
                             }
                         }
                     }
-                    .padding(20)
+                    .padding(16)
                     .padding(.bottom, 100)
                 }
 
-                // Ergebnis (wenn generiert)
+                // Generierter Prompt (wenn vorhanden)
                 if !viewModel.generatedPrompt.isEmpty {
                     VStack(spacing: 0) {
                         Divider()
 
                         VStack(spacing: 12) {
                             HStack {
-                                Label("Ihr Prompt", systemImage: "checkmark.circle.fill")
-                                    .font(.headline)
-                                    .foregroundStyle(.green)
+                                Image(systemName: "checkmark.circle.fill")
+                                    .foregroundStyle(DesignSystem.SemanticColor.successIcon)
+                                Text("Fertiger Prompt")
+                                    .font(DesignSystem.Typography.bodyEmphasized)
+                                    .foregroundStyle(DesignSystem.SemanticColor.primary)
                                 Spacer()
                                 Button {
                                     viewModel.copyToClipboard()
                                 } label: {
-                                    Label("Kopieren", systemImage: "doc.on.doc")
-                                        .font(.subheadline.weight(.medium))
+                                    Image(systemName: "doc.on.doc")
+                                    Text("Kopieren")
                                 }
                                 .buttonStyle(.bordered)
+                                .tint(DesignSystem.SemanticColor.accent)
                             }
 
                             Text(viewModel.generatedPrompt)
-                                .font(.body)
+                                .font(DesignSystem.Typography.body)
                                 .textSelection(.enabled)
                                 .frame(maxWidth: .infinity, alignment: .leading)
-                                .padding(16)
-                                .background(Color(.systemGray6))
-                                .cornerRadius(12)
+                                .padding(12)
+                                .background(DesignSystem.SemanticColor.tertiaryBackground)
+                                .cornerRadius(DesignSystem.CornerRadius.md)
                         }
-                        .padding(20)
+                        .padding(16)
                         .background(.ultraThinMaterial)
                     }
                 }
             }
 
-            // Floating Action Button
+            // Generieren-Button
             if viewModel.generatedPrompt.isEmpty {
-                Button {
-                    viewModel.generatePrompt()
-                } label: {
-                    HStack {
-                        Image(systemName: "wand.and.stars.inverse")
-                        Text("Generieren")
-                            .font(.headline)
+                VStack {
+                    Spacer()
+
+                    Button {
+                        viewModel.generatePrompt()
+                    } label: {
+                        HStack(spacing: 8) {
+                            Image(systemName: "wand.and.stars")
+                                .font(.system(size: 16, weight: .semibold))
+                            Text("Generieren")
+                                .font(DesignSystem.Typography.bodyEmphasized)
+                        }
+                        .foregroundStyle(.white)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 16)
+                        .background(
+                            RoundedRectangle(cornerRadius: DesignSystem.CornerRadius.md)
+                                .fill(viewModel.allRequiredFilled ? DesignSystem.SemanticColor.accent : Color.secondary)
+                                .shadow(color: .black.opacity(0.15), radius: 12, y: 4)
+                        )
                     }
-                    .foregroundStyle(.white)
-                    .padding(.horizontal, 32)
-                    .padding(.vertical, 16)
-                    .background(
-                        Capsule()
-                            .fill(viewModel.allRequiredFilled ? Color.accentColor : Color.secondary)
-                            .shadow(color: .black.opacity(0.2), radius: 8, y: 4)
-                    )
+                    .disabled(!viewModel.allRequiredFilled)
+                    .padding(.horizontal, 16)
+                    .padding(.bottom, 16)
                 }
-                .disabled(!viewModel.allRequiredFilled)
-                .padding(.bottom, 24)
             }
         }
         .alert("Fehler", isPresented: .constant(viewModel.errorMessage != nil)) {

@@ -69,7 +69,7 @@ struct ModernBadge: View {
             switch self {
             case .default: return DesignSystem.SemanticColor.secondary
             case .accent: return DesignSystem.SemanticColor.accent
-            case .success: return DesignSystem.SemanticColor.success
+            case .success: return DesignSystem.SemanticColor.successIcon
             case .warning: return DesignSystem.SemanticColor.warning
             case .info: return DesignSystem.SemanticColor.info
             }
@@ -237,7 +237,7 @@ struct ModernToast: View {
 
         var color: Color {
             switch self {
-            case .success: return DesignSystem.SemanticColor.success
+            case .success: return DesignSystem.SemanticColor.successIcon
             case .error: return DesignSystem.SemanticColor.error
             case .info: return DesignSystem.SemanticColor.info
             }
