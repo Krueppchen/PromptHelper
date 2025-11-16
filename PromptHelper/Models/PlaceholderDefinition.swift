@@ -38,7 +38,7 @@ final class PlaceholderDefinition {
     var descriptionText: String?
 
     /// Tags für Kategorisierung und Filterung
-    var tags: [String]
+    var tags: [String] = []
 
     /// Erstellungsdatum
     var createdAt: Date

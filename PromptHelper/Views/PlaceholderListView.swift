@@ -144,7 +144,7 @@ struct PlaceholderListView: View {
                     } label: {
                         Text("Zurücksetzen")
                             .font(.caption)
-                            .foregroundStyle(.accentColor)
+                            .foregroundColor(.accentColor)
                     }
                 }
             }
@@ -164,7 +164,7 @@ struct PlaceholderListView: View {
                             .padding(.horizontal, 10)
                             .padding(.vertical, 6)
                             .background(isSelected ? Color.accentColor : Color.accentColor.opacity(0.15))
-                            .foregroundStyle(isSelected ? .white : .accentColor)
+                            .foregroundColor(isSelected ? .white : Color.accentColor)
                             .cornerRadius(12)
                     }
                 }
@@ -255,7 +255,7 @@ struct ModernPlaceholderCard: View {
                                 .padding(.horizontal, 6)
                                 .padding(.vertical, 3)
                                 .background(Color.accentColor.opacity(0.15))
-                                .foregroundStyle(.accentColor)
+                                .foregroundColor(.accentColor)
                                 .cornerRadius(8)
                         }
                     }

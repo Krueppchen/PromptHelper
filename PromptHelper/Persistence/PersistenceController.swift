@@ -25,6 +25,23 @@ final class PersistenceController {
 
     // MARK: - Initialisierung
 
+    /// Initializes the PersistenceController singleton and configures the SwiftData stack.
+    /// 
+    /// Responsibilities:
+    /// - Defines the app's data model schema (PromptTemplate, PlaceholderDefinition, PromptTemplatePlaceholder, PromptInstance).
+    /// - Creates a persistent ModelContainer with on-disk storage and saving enabled.
+    /// - In DEBUG builds, seeds the store with sample data if it's empty (asynchronously).
+    ///
+    /// Behavior:
+    /// - Uses a fatalError if the ModelContainer cannot be created, as this is a critical, unrecoverable setup failure.
+    /// - Exposes the container's mainContext for use on the main actor (UI-bound operations).
+    ///
+    /// Threading:
+    /// - Marked @MainActor to ensure initialization and subsequent mainContext access occur on the main thread.
+    ///
+    /// Notes:
+    /// - For previews and tests, prefer using the `preview` static property or the `init(inMemory:)` initializer to avoid
+    ///   writing to disk and to produce deterministic sample data.
     private init() {
         let schema = Schema([
             PromptTemplate.self,

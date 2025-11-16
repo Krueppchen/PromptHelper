@@ -55,7 +55,7 @@ struct PlaceholderPickerSheet: View {
                                         .padding(.horizontal, 10)
                                         .padding(.vertical, 6)
                                         .background(isSelected ? Color.accentColor : Color.accentColor.opacity(0.15))
-                                        .foregroundStyle(isSelected ? .white : .accentColor)
+                                        .foregroundStyle(isSelected ? Color.white : Color.accentColor)
                                         .cornerRadius(12)
                                 }
                             }
@@ -72,7 +72,7 @@ struct PlaceholderPickerSheet: View {
                             } label: {
                                 Text("Zurücksetzen")
                                     .font(.caption)
-                                    .foregroundStyle(.accentColor)
+                                    .foregroundStyle(.tint)
                             }
                         }
                         .padding(.horizontal, 16)
@@ -188,7 +188,7 @@ struct PlaceholderPickerRow: View {
                                 .padding(.horizontal, 6)
                                 .padding(.vertical, 2)
                                 .background(Color.accentColor.opacity(0.15))
-                                .foregroundStyle(.accentColor)
+                                .foregroundStyle(.tint)
                                 .cornerRadius(6)
                         }
                     }
@@ -224,3 +224,4 @@ struct PlaceholderPickerRow: View {
         .modelContainer(PersistenceController.preview.container)
     }
 }
+
