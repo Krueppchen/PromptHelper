@@ -96,35 +96,88 @@ struct PromptEditorView: View {
 
                 Divider()
 
-                // Großer Editor - im Vordergrund
-                TextEditor(text: $bindableViewModel.editContent)
-                    .font(.system(size: 17, design: .default))
-                    .padding(20)
-                    .scrollContentBackground(.hidden)
-                    .toolbar {
-                        ToolbarItemGroup(placement: .keyboard) {
-                            HStack(spacing: 8) {
-                                Button {
-                                    showPlaceholderPicker = true
-                                } label: {
-                                    Label("Platzhalter", systemImage: "curlybraces")
-                                        .font(.subheadline.weight(.medium))
-                                        .padding(.horizontal, 12)
-                                        .padding(.vertical, 8)
-                                        .background(Color.accentColor)
-                                        .foregroundStyle(.white)
-                                        .clipShape(Capsule())
-                                }
+                // Info-Banner für Editor
+                VStack(alignment: .leading, spacing: DesignSystem.Spacing.xxs) {
+                    HStack(spacing: DesignSystem.Spacing.xs) {
+                        Image(systemName: "text.cursor")
+                            .font(.system(size: DesignSystem.IconSize.sm))
+                            .foregroundStyle(DesignSystem.SemanticColor.accent)
 
-                                Spacer()
+                        Text("Prompt-Template bearbeiten")
+                            .font(DesignSystem.Typography.caption)
+                            .foregroundStyle(DesignSystem.SemanticColor.secondary)
 
-                                Button("Fertig") {
-                                    hideKeyboard()
-                                }
-                                .font(.subheadline.weight(.medium))
+                        Spacer()
+
+                        Text("Tippen Sie hier, um zu beginnen")
+                            .font(DesignSystem.Typography.caption)
+                            .foregroundStyle(DesignSystem.SemanticColor.accent)
+                            .opacity(bindableViewModel.editContent.isEmpty ? 1 : 0)
+                    }
+                }
+                .padding(.horizontal, 20)
+                .padding(.vertical, 8)
+                .background(DesignSystem.SemanticColor.accent.opacity(0.05))
+
+                // Großer Editor - im Vordergrund mit verbesserter Visualisierung
+                ZStack(alignment: .topLeading) {
+                    // Placeholder Text wenn leer
+                    if bindableViewModel.editContent.isEmpty {
+                        VStack(alignment: .leading, spacing: DesignSystem.Spacing.sm) {
+                            Text("Beginnen Sie mit dem Schreiben...")
+                                .font(.system(size: 17, design: .default))
+                                .foregroundStyle(Color.secondary.opacity(0.5))
+
+                            Text("💡 Tipp: Fügen Sie Platzhalter wie {{name}} hinzu")
+                                .font(DesignSystem.Typography.caption)
+                                .foregroundStyle(DesignSystem.SemanticColor.accent.opacity(0.7))
+                        }
+                        .padding(20)
+                    }
+
+                    TextEditor(text: $bindableViewModel.editContent)
+                        .font(.system(size: 17, design: .default))
+                        .padding(20)
+                        .scrollContentBackground(.hidden)
+                        .opacity(bindableViewModel.editContent.isEmpty ? 0.5 : 1)
+                }
+                .background(
+                    RoundedRectangle(cornerRadius: 0)
+                        .fill(DesignSystem.SemanticColor.background)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 0)
+                                .strokeBorder(
+                                    bindableViewModel.editContent.isEmpty ?
+                                        DesignSystem.SemanticColor.accent.opacity(0.2) : Color.clear,
+                                    lineWidth: 2,
+                                    style: StrokeStyle(lineWidth: 2, dash: [8, 4])
+                                )
+                        )
+                )
+                .toolbar {
+                    ToolbarItemGroup(placement: .keyboard) {
+                        HStack(spacing: 8) {
+                            Button {
+                                showPlaceholderPicker = true
+                            } label: {
+                                Label("Platzhalter", systemImage: "curlybraces")
+                                    .font(.subheadline.weight(.medium))
+                                    .padding(.horizontal, 12)
+                                    .padding(.vertical, 8)
+                                    .background(Color.accentColor)
+                                    .foregroundStyle(.white)
+                                    .clipShape(Capsule())
                             }
+
+                            Spacer()
+
+                            Button("Fertig") {
+                                hideKeyboard()
+                            }
+                            .font(.subheadline.weight(.medium))
                         }
                     }
+                }
             }
 
             // Floating Action Button für Generator
