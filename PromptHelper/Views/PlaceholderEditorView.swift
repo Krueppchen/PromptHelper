@@ -21,7 +21,6 @@ struct PlaceholderEditorView: View {
     @State private var editLabel: String
     @State private var editType: PlaceholderType
     @State private var editOptions: [String]
-    @State private var editIsGlobal: Bool
     @State private var editDefaultValue: String
     @State private var editDescription: String
 
@@ -38,7 +37,6 @@ struct PlaceholderEditorView: View {
         _editLabel = State(initialValue: placeholder.label)
         _editType = State(initialValue: placeholder.type)
         _editOptions = State(initialValue: placeholder.options)
-        _editIsGlobal = State(initialValue: placeholder.isGlobal)
         _editDefaultValue = State(initialValue: placeholder.defaultValue ?? "")
         _editDescription = State(initialValue: placeholder.descriptionText ?? "")
     }
@@ -130,10 +128,12 @@ struct PlaceholderEditorView: View {
             }
 
             // Erweiterte Einstellungen
-            Section("Einstellungen") {
-                Toggle("Global verfügbar", isOn: $editIsGlobal)
-
+            Section {
                 TextField("Standardwert (optional)", text: $editDefaultValue)
+            } header: {
+                Text("Einstellungen")
+            } footer: {
+                Text("Der Standardwert wird automatisch eingesetzt, wenn Sie einen neuen Prompt erstellen")
             }
 
             // Vorschau
@@ -220,7 +220,7 @@ struct PlaceholderEditorView: View {
         placeholder.label = editLabel
         placeholder.type = editType
         placeholder.options = editOptions
-        placeholder.isGlobal = editIsGlobal
+        placeholder.isGlobal = true // Alle Platzhalter sind jetzt standardmäßig global
         placeholder.defaultValue = editDefaultValue.isEmpty ? nil : editDefaultValue
         placeholder.descriptionText = editDescription.isEmpty ? nil : editDescription
         placeholder.updatedAt = Date()

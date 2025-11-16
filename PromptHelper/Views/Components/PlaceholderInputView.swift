@@ -34,14 +34,14 @@ struct PlaceholderInputView: View {
             // Input basierend auf Typ
             switch placeholder.type {
             case .text:
-                TextField("Eingabe...", text: $value)
+                TextField(placeholder.defaultValue ?? "Ihre Eingabe...", text: $value)
                     .font(DesignSystem.Typography.body)
                     .padding(DesignSystem.Spacing.sm)
                     .background(DesignSystem.SemanticColor.tertiaryBackground)
                     .cornerRadius(DesignSystem.CornerRadius.sm)
 
             case .number:
-                TextField("Zahl eingeben...", text: $value)
+                TextField(placeholder.defaultValue ?? "z.B. 42", text: $value)
                     .keyboardType(.decimalPad)
                     .font(DesignSystem.Typography.body)
                     .padding(DesignSystem.Spacing.sm)

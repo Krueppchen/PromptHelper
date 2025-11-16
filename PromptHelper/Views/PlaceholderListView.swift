@@ -104,33 +104,18 @@ struct PlaceholderListView: View {
         @Bindable var bindableViewModel = viewModel
 
         return ModernCard(padding: DesignSystem.Spacing.sm) {
-            HStack(spacing: DesignSystem.Spacing.sm) {
-                HStack(spacing: DesignSystem.Spacing.xs) {
-                    Image(systemName: "magnifyingglass")
-                        .font(.system(size: DesignSystem.IconSize.sm))
-                        .foregroundStyle(DesignSystem.SemanticColor.tertiary)
+            HStack(spacing: DesignSystem.Spacing.xs) {
+                Image(systemName: "magnifyingglass")
+                    .font(.system(size: DesignSystem.IconSize.sm))
+                    .foregroundStyle(DesignSystem.SemanticColor.tertiary)
 
-                    TextField("Suchen...", text: $bindableViewModel.searchText)
-                        .font(DesignSystem.Typography.body)
-                }
-                .padding(.horizontal, DesignSystem.Spacing.sm)
-                .padding(.vertical, DesignSystem.Spacing.xs)
-                .background(DesignSystem.SemanticColor.tertiaryBackground)
-                .cornerRadius(DesignSystem.CornerRadius.sm)
-
-                Button {
-                    withAnimation(DesignSystem.Animation.quick) {
-                        bindableViewModel.showGlobalOnly.toggle()
-                    }
-                } label: {
-                    Image(systemName: bindableViewModel.showGlobalOnly ? "globe.americas.fill" : "globe")
-                        .font(.system(size: DesignSystem.IconSize.md, weight: .medium))
-                        .foregroundStyle(bindableViewModel.showGlobalOnly ? DesignSystem.SemanticColor.info : DesignSystem.SemanticColor.secondary)
-                        .frame(width: 40, height: 40)
-                        .background(DesignSystem.SemanticColor.tertiaryBackground)
-                        .cornerRadius(DesignSystem.CornerRadius.sm)
-                }
+                TextField("Suchen...", text: $bindableViewModel.searchText)
+                    .font(DesignSystem.Typography.body)
             }
+            .padding(.horizontal, DesignSystem.Spacing.sm)
+            .padding(.vertical, DesignSystem.Spacing.xs)
+            .background(DesignSystem.SemanticColor.tertiaryBackground)
+            .cornerRadius(DesignSystem.CornerRadius.sm)
         }
     }
 
@@ -171,20 +156,13 @@ struct PlaceholderListView: View {
 
     private func filterPlaceholders(_ placeholders: [PlaceholderDefinition], viewModel: PlaceholderListViewModel) -> [PlaceholderDefinition] {
         placeholders.filter { placeholder in
-            // Global-Filter
-            if viewModel.showGlobalOnly && !placeholder.isGlobal {
-                return false
-            }
-
             // Such-Filter
             if !viewModel.searchText.isEmpty {
                 let searchLower = viewModel.searchText.lowercased()
                 let matchesKey = placeholder.key.lowercased().contains(searchLower)
                 let matchesLabel = placeholder.label.lowercased().contains(searchLower)
 
-                if !matchesKey && !matchesLabel {
-                    return false
-                }
+                return matchesKey || matchesLabel
             }
 
             return true
@@ -218,18 +196,10 @@ struct ModernPlaceholderCard: View {
                     )
 
                     VStack(alignment: .leading, spacing: DesignSystem.Spacing.xs) {
-                        HStack {
-                            Text(placeholder.label)
-                                .font(DesignSystem.Typography.title3)
-                                .foregroundStyle(DesignSystem.SemanticColor.primary)
-                                .lineLimit(1)
-
-                            Spacer()
-
-                            if placeholder.isGlobal {
-                                ModernBadge(text: "Global", icon: "globe", style: .info)
-                            }
-                        }
+                        Text(placeholder.label)
+                            .font(DesignSystem.Typography.title3)
+                            .foregroundStyle(DesignSystem.SemanticColor.primary)
+                            .lineLimit(1)
 
                         Text("{{\(placeholder.key)}}")
                             .font(DesignSystem.Typography.bodyMonospaced)

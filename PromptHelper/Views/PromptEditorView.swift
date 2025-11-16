@@ -123,13 +123,16 @@ struct PromptEditorView: View {
             }
 
             // Platzhalter-Verwaltung
-            Section("Platzhalter") {
+            Section {
                 let detectedKeys = viewModel.getDetectedPlaceholderKeys()
-                let missingKeys = viewModel.getMissingPlaceholderDefinitions()
 
                 if detectedKeys.isEmpty {
-                    Text("Keine Platzhalter gefunden")
-                        .foregroundStyle(.secondary)
+                    HStack {
+                        Image(systemName: "info.circle")
+                            .foregroundStyle(.secondary)
+                        Text("Tippen Sie {{name}} um einen Platzhalter zu erstellen")
+                            .foregroundStyle(.secondary)
+                    }
                 } else {
                     ForEach(detectedKeys, id: \.self) { key in
                         HStack {
@@ -138,24 +141,26 @@ struct PromptEditorView: View {
 
                             Spacer()
 
-                            if missingKeys.contains(key) {
-                                Label("Nicht definiert", systemImage: "exclamationmark.triangle")
-                                    .font(.caption)
-                                    .foregroundStyle(.orange)
-                            } else {
-                                Image(systemName: "checkmark.circle.fill")
-                                    .foregroundStyle(.green)
-                                    .font(.caption)
-                            }
+                            Image(systemName: "checkmark.circle.fill")
+                                .foregroundStyle(.green)
+                                .font(.caption)
                         }
                     }
 
-                    Button {
-                        viewModel.detectAndSyncPlaceholders()
-                    } label: {
-                        Label("Platzhalter synchronisieren", systemImage: "arrow.triangle.2.circlepath")
+                    if viewModel.isAutoSyncing {
+                        HStack {
+                            ProgressView()
+                                .controlSize(.small)
+                            Text("Synchronisiere...")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
                     }
                 }
+            } header: {
+                Text("Platzhalter")
+            } footer: {
+                Text("Platzhalter werden automatisch erkannt und erstellt")
             }
 
             // Tags

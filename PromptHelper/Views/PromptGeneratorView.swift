@@ -75,11 +75,14 @@ struct PromptGeneratorView: View {
                 let placeholders = viewModel.sortedPlaceholders
 
                 if placeholders.isEmpty {
-                    ContentUnavailableView(
-                        "Keine Platzhalter",
-                        systemImage: "curlybraces",
-                        description: Text("Dieses Template hat keine Platzhalter zum Ausfüllen")
-                    )
+                    HStack {
+                        Image(systemName: "info.circle")
+                            .foregroundStyle(.secondary)
+                        Text("Dieses Template hat keine Platzhalter zum Ausfüllen")
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                    }
+                    .padding(.vertical, 8)
                 } else {
                     ForEach(placeholders, id: \.id) { templatePlaceholder in
                         if let placeholder = templatePlaceholder.placeholder {
@@ -122,6 +125,10 @@ struct PromptGeneratorView: View {
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     }
+                }
+            } footer: {
+                if !viewModel.sortedPlaceholders.isEmpty {
+                    Text("Füllen Sie alle Platzhalter aus, um Ihren personalisierten Prompt zu generieren")
                 }
             }
 

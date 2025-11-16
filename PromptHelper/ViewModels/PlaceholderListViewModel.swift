@@ -16,9 +16,6 @@ final class PlaceholderListViewModel {
     /// Suchbegriff für die Filterung
     var searchText: String = ""
 
-    /// Filter: Nur globale Platzhalter anzeigen
-    var showGlobalOnly: Bool = true
-
     /// Fehlermeldung
     var errorMessage: String?
 
