@@ -57,8 +57,8 @@ struct PromptListView: View {
     private var templateListContent: some View {
         ScrollView {
             LazyVStack(spacing: DesignSystem.Spacing.md) {
-                // Search and Filter Bar
-                searchAndFilterBar
+                // Filter Bar (nur Favoriten-Toggle)
+                filterBar
                     .padding(.horizontal, DesignSystem.Spacing.md)
                     .padding(.top, DesignSystem.Spacing.sm)
 
@@ -86,6 +86,7 @@ struct PromptListView: View {
             }
             .padding(.bottom, DesignSystem.Spacing.lg)
         }
+        .searchable(text: $viewModel.searchText, prompt: "Suchen...")
         .background(DesignSystem.SemanticColor.background)
         .navigationDestination(item: $selectedTemplate) { template in
             PromptEditorView(template: template)
@@ -103,34 +104,29 @@ struct PromptListView: View {
 
     // MARK: - Subviews for List Content
 
-    private var searchAndFilterBar: some View {
-        ModernCard(padding: DesignSystem.Spacing.sm) {
-            HStack(spacing: DesignSystem.Spacing.sm) {
+    private var filterBar: some View {
+        HStack(spacing: DesignSystem.Spacing.sm) {
+            Spacer()
+
+            Button {
+                withAnimation(DesignSystem.Animation.quick) {
+                    viewModel.showFavoritesOnly.toggle()
+                }
+            } label: {
                 HStack(spacing: DesignSystem.Spacing.xs) {
-                    Image(systemName: "magnifyingglass")
-                        .font(.system(size: DesignSystem.IconSize.sm))
-                        .foregroundStyle(DesignSystem.SemanticColor.tertiary)
-
-                    TextField("Suchen...", text: $viewModel.searchText)
-                        .font(DesignSystem.Typography.body)
-                }
-                .padding(.horizontal, DesignSystem.Spacing.sm)
-                .padding(.vertical, DesignSystem.Spacing.xs)
-                .background(DesignSystem.SemanticColor.tertiaryBackground)
-                .cornerRadius(DesignSystem.CornerRadius.sm)
-
-                Button {
-                    withAnimation(DesignSystem.Animation.quick) {
-                        viewModel.showFavoritesOnly.toggle()
-                    }
-                } label: {
                     Image(systemName: viewModel.showFavoritesOnly ? "star.fill" : "star")
-                        .font(.system(size: DesignSystem.IconSize.md, weight: .medium))
-                        .foregroundStyle(viewModel.showFavoritesOnly ? .yellow : DesignSystem.SemanticColor.secondary)
-                        .frame(width: 40, height: 40)
-                        .background(DesignSystem.SemanticColor.tertiaryBackground)
-                        .cornerRadius(DesignSystem.CornerRadius.sm)
+                        .font(.system(size: DesignSystem.IconSize.sm, weight: .medium))
+                    Text(viewModel.showFavoritesOnly ? "Alle anzeigen" : "Nur Favoriten")
+                        .font(DesignSystem.Typography.subheadline)
                 }
+                .foregroundStyle(viewModel.showFavoritesOnly ? .white : DesignSystem.SemanticColor.accent)
+                .padding(.horizontal, DesignSystem.Spacing.md)
+                .padding(.vertical, DesignSystem.Spacing.xs)
+                .background(
+                    viewModel.showFavoritesOnly ?
+                        DesignSystem.SemanticColor.accent : DesignSystem.SemanticColor.accent.opacity(0.1)
+                )
+                .cornerRadius(DesignSystem.CornerRadius.chip)
             }
         }
     }
@@ -173,6 +169,36 @@ struct PromptListView: View {
                         withAnimation(DesignSystem.Animation.smooth) {
                             selectedTemplate = template
                         }
+                    }
+                    .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+                        // Löschen (ganz rechts)
+                        Button(role: .destructive) {
+                            withAnimation(DesignSystem.Animation.smooth) {
+                                viewModel.deleteTemplate(template)
+                            }
+                        } label: {
+                            Label("Löschen", systemImage: "trash")
+                        }
+
+                        // Bearbeiten
+                        Button {
+                            selectedTemplate = template
+                        } label: {
+                            Label("Bearbeiten", systemImage: "pencil")
+                        }
+                        .tint(DesignSystem.SemanticColor.accent)
+                    }
+                    .swipeActions(edge: .leading, allowsFullSwipe: true) {
+                        // Favorit (links)
+                        Button {
+                            viewModel.toggleFavorite(template)
+                        } label: {
+                            Label(
+                                template.isFavorite ? "Favorit entfernen" : "Favorit",
+                                systemImage: template.isFavorite ? "star.slash" : "star.fill"
+                            )
+                        }
+                        .tint(.yellow)
                     }
                     .contextMenu {
                         Button {
