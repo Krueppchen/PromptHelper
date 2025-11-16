@@ -23,9 +23,13 @@ struct PlaceholderEditorView: View {
     @State private var editOptions: [String]
     @State private var editDefaultValue: String
     @State private var editDescription: String
+    @State private var editTags: [String]
 
     /// Neuer Options-Input
     @State private var newOptionInput: String = ""
+
+    /// Neuer Tag-Input
+    @State private var newTagInput: String = ""
 
     /// Fehler und Erfolg
     @State private var errorMessage: String?
@@ -39,6 +43,7 @@ struct PlaceholderEditorView: View {
         _editOptions = State(initialValue: placeholder.options)
         _editDefaultValue = State(initialValue: placeholder.defaultValue ?? "")
         _editDescription = State(initialValue: placeholder.descriptionText ?? "")
+        _editTags = State(initialValue: placeholder.tags)
     }
 
     var body: some View {
@@ -152,6 +157,53 @@ struct PlaceholderEditorView: View {
                             TextField("z.B. Beispieltext", text: $editDefaultValue)
                                 .textFieldStyle(.roundedBorder)
                         }
+
+                        // Tags
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("Tags")
+                                .font(.subheadline.weight(.medium))
+                                .foregroundStyle(.secondary)
+
+                            if !editTags.isEmpty {
+                                TagFlowLayout(spacing: 8) {
+                                    ForEach(Array(editTags.enumerated()), id: \.offset) { index, tag in
+                                        HStack(spacing: 4) {
+                                            Text(tag)
+                                                .font(.caption)
+
+                                            Button {
+                                                editTags.remove(at: index)
+                                            } label: {
+                                                Image(systemName: "xmark.circle.fill")
+                                                    .font(.caption)
+                                                    .foregroundStyle(.secondary)
+                                            }
+                                        }
+                                        .padding(.horizontal, 10)
+                                        .padding(.vertical, 6)
+                                        .background(Color.accentColor.opacity(0.15))
+                                        .foregroundStyle(Color.accentColor)
+                                        .cornerRadius(12)
+                                    }
+                                }
+                            }
+
+                            HStack {
+                                TextField("Neuer Tag", text: $newTagInput)
+                                    .textFieldStyle(.roundedBorder)
+                                    .onSubmit {
+                                        addTag()
+                                    }
+
+                                Button {
+                                    addTag()
+                                } label: {
+                                    Image(systemName: "plus.circle.fill")
+                                        .font(.title2)
+                                }
+                                .disabled(newTagInput.trimmingCharacters(in: .whitespaces).isEmpty)
+                            }
+                        }
                     }
                     .padding(.horizontal, 20)
                 }
@@ -201,6 +253,18 @@ struct PlaceholderEditorView: View {
         newOptionInput = ""
     }
 
+    private func addTag() {
+        let tag = newTagInput.trimmingCharacters(in: .whitespaces)
+        guard !tag.isEmpty else { return }
+        guard !editTags.contains(tag) else {
+            newTagInput = ""
+            return
+        }
+
+        editTags.append(tag)
+        newTagInput = ""
+    }
+
     private func save() {
         // Validierung
         guard !editLabel.trimmingCharacters(in: .whitespaces).isEmpty else {
@@ -231,6 +295,7 @@ struct PlaceholderEditorView: View {
         placeholder.isGlobal = true // Alle Platzhalter sind jetzt standardmäßig global
         placeholder.defaultValue = editDefaultValue.isEmpty ? nil : editDefaultValue
         placeholder.descriptionText = editDescription.isEmpty ? nil : editDescription
+        placeholder.tags = editTags
         placeholder.updatedAt = Date()
 
         // Speichere Context

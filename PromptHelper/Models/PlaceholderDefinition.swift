@@ -37,6 +37,9 @@ final class PlaceholderDefinition {
     /// Optionale Beschreibung/Hilfetext
     var descriptionText: String?
 
+    /// Tags für Kategorisierung und Filterung
+    var tags: [String]
+
     /// Erstellungsdatum
     var createdAt: Date
 
@@ -66,6 +69,7 @@ final class PlaceholderDefinition {
         isGlobal: Bool = true,
         defaultValue: String? = nil,
         descriptionText: String? = nil,
+        tags: [String] = [],
         createdAt: Date = Date(),
         updatedAt: Date = Date()
     ) {
@@ -77,6 +81,7 @@ final class PlaceholderDefinition {
         self.isGlobal = isGlobal
         self.defaultValue = defaultValue
         self.descriptionText = descriptionText
+        self.tags = tags
         self.createdAt = createdAt
         self.updatedAt = updatedAt
     }
