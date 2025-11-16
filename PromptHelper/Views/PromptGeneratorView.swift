@@ -19,10 +19,9 @@ struct PromptGeneratorView: View {
     /// ViewModel
     @State private var viewModel: PromptGeneratorViewModel
 
-    init(template: PromptTemplate) {
+    init(template: PromptTemplate, context: ModelContext) {
         self.template = template
-        let tempContext = ModelContext(PersistenceController.shared.container)
-        _viewModel = State(initialValue: PromptGeneratorViewModel(template: template, context: tempContext))
+        _viewModel = State(initialValue: PromptGeneratorViewModel(template: template, context: context))
     }
 
     var body: some View {
@@ -30,11 +29,6 @@ struct PromptGeneratorView: View {
             .navigationTitle("Prompt generieren")
             .navigationBarTitleDisplayMode(.inline)
             .background(DesignSystem.SemanticColor.background)
-            .onAppear {
-                if viewModel.context !== modelContext {
-                    viewModel = PromptGeneratorViewModel(template: template, context: modelContext)
-                }
-            }
     }
 
     // MARK: - Subviews
@@ -80,39 +74,92 @@ struct PromptGeneratorView: View {
                     .padding(.bottom, 100)
                 }
 
-                // Generierter Prompt (wenn vorhanden)
+                // Kompakte Erfolgsmeldung nach Generierung
                 if !viewModel.generatedPrompt.isEmpty {
                     VStack(spacing: 0) {
                         Divider()
 
                         VStack(spacing: 12) {
-                            HStack {
+                            HStack(spacing: 12) {
                                 Image(systemName: "checkmark.circle.fill")
+                                    .font(.title2)
                                     .foregroundStyle(DesignSystem.SemanticColor.successIcon)
-                                Text("Fertiger Prompt")
-                                    .font(DesignSystem.Typography.bodyEmphasized)
-                                    .foregroundStyle(DesignSystem.SemanticColor.primary)
+
+                                VStack(alignment: .leading, spacing: 4) {
+                                    Text("Prompt generiert!")
+                                        .font(DesignSystem.Typography.bodyEmphasized)
+                                        .foregroundStyle(DesignSystem.SemanticColor.primary)
+
+                                    Text("\(viewModel.generatedPrompt.count) Zeichen")
+                                        .font(DesignSystem.Typography.caption)
+                                        .foregroundStyle(DesignSystem.SemanticColor.secondary)
+                                }
+
                                 Spacer()
+
                                 Button {
                                     viewModel.copyToClipboard()
                                 } label: {
-                                    Image(systemName: "doc.on.doc")
-                                    Text("Kopieren")
+                                    HStack(spacing: 6) {
+                                        Image(systemName: "doc.on.doc")
+                                        Text("Kopieren")
+                                    }
+                                    .padding(.horizontal, 16)
+                                    .padding(.vertical, 10)
                                 }
-                                .buttonStyle(.bordered)
+                                .buttonStyle(.borderedProminent)
                                 .tint(DesignSystem.SemanticColor.accent)
                             }
 
-                            Text(viewModel.generatedPrompt)
-                                .font(DesignSystem.Typography.body)
-                                .textSelection(.enabled)
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                                .padding(12)
-                                .background(DesignSystem.SemanticColor.tertiaryBackground)
-                                .cornerRadius(DesignSystem.CornerRadius.md)
+                            // Optional: Vorschau anzeigen/verstecken
+                            if viewModel.showPreview {
+                                VStack(alignment: .leading, spacing: 8) {
+                                    Button {
+                                        viewModel.showPreview = false
+                                    } label: {
+                                        HStack {
+                                            Text("Vorschau")
+                                                .font(DesignSystem.Typography.caption)
+                                                .foregroundStyle(DesignSystem.SemanticColor.secondary)
+                                            Spacer()
+                                            Image(systemName: "chevron.up")
+                                                .font(.caption)
+                                                .foregroundStyle(DesignSystem.SemanticColor.secondary)
+                                        }
+                                    }
+
+                                    ScrollView {
+                                        Text(viewModel.generatedPrompt)
+                                            .font(DesignSystem.Typography.body)
+                                            .textSelection(.enabled)
+                                            .frame(maxWidth: .infinity, alignment: .leading)
+                                            .padding(12)
+                                    }
+                                    .frame(maxHeight: 150)
+                                    .background(DesignSystem.SemanticColor.tertiaryBackground)
+                                    .cornerRadius(DesignSystem.CornerRadius.md)
+                                }
+                                .transition(.move(edge: .top).combined(with: .opacity))
+                            } else {
+                                Button {
+                                    viewModel.showPreview = true
+                                } label: {
+                                    HStack {
+                                        Text("Vorschau anzeigen")
+                                            .font(DesignSystem.Typography.caption)
+                                            .foregroundStyle(DesignSystem.SemanticColor.accent)
+                                        Spacer()
+                                        Image(systemName: "chevron.down")
+                                            .font(.caption)
+                                            .foregroundStyle(DesignSystem.SemanticColor.accent)
+                                    }
+                                }
+                                .transition(.opacity)
+                            }
                         }
                         .padding(16)
                         .background(.ultraThinMaterial)
+                        .animation(DesignSystem.Animation.smooth, value: viewModel.showPreview)
                     }
                 }
             }
@@ -241,7 +288,7 @@ struct PromptGeneratorView: View {
         if let template = try? PersistenceController.preview.mainContext.fetch(
             FetchDescriptor<PromptTemplate>()
         ).first {
-            PromptGeneratorView(template: template)
+            PromptGeneratorView(template: template, context: PersistenceController.preview.mainContext)
                 .modelContainer(PersistenceController.preview.container)
         }
     }
