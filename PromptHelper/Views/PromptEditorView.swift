@@ -33,8 +33,6 @@ struct PromptEditorView: View {
                     }
             }
         }
-        .navigationTitle("Template bearbeiten")
-        .navigationBarTitleDisplayMode(.inline)
         .background(DesignSystem.SemanticColor.background)
     }
 
@@ -45,175 +43,113 @@ struct PromptEditorView: View {
         @Bindable var bindableViewModel = viewModel
         @Bindable var bindableTemplate = template
 
-        Form {
-            // Basis-Informationen
-            Section("Informationen") {
-                TextField("Titel", text: $bindableViewModel.editTitle)
+        ZStack(alignment: .bottomTrailing) {
+            VStack(spacing: 0) {
+                // Kompakte Header-Leiste
+                VStack(spacing: 8) {
+                    TextField("Titel", text: $bindableViewModel.editTitle)
+                        .font(.title2.weight(.semibold))
+                        .textFieldStyle(.plain)
 
-                TextField("Beschreibung (optional)", text: $bindableViewModel.editDescription, axis: .vertical)
-                    .lineLimit(3...6)
-            }
+                    HStack(spacing: 12) {
+                        // Zeichen & Platzhalter Counter
+                        HStack(spacing: 4) {
+                            Image(systemName: "text.alignleft")
+                                .font(.caption)
+                            Text("\(bindableViewModel.editContent.count)")
+                                .font(.caption.monospacedDigit())
+                        }
+                        .foregroundStyle(.secondary)
 
-            // Content-Editor
-            Section {
+                        let placeholderCount = viewModel.getDetectedPlaceholderKeys().count
+                        HStack(spacing: 4) {
+                            Image(systemName: "curlybraces")
+                                .font(.caption)
+                            Text("\(placeholderCount)")
+                                .font(.caption.monospacedDigit())
+                        }
+                        .foregroundStyle(.secondary)
+
+                        if viewModel.isAutoSyncing {
+                            ProgressView()
+                                .controlSize(.mini)
+                        }
+
+                        Spacer()
+
+                        // Quick Actions
+                        Button {
+                            bindableTemplate.isFavorite.toggle()
+                        } label: {
+                            Image(systemName: bindableTemplate.isFavorite ? "star.fill" : "star")
+                                .foregroundStyle(bindableTemplate.isFavorite ? .yellow : .secondary)
+                        }
+                    }
+                }
+                .padding(.horizontal, 20)
+                .padding(.vertical, 12)
+                .background(.ultraThinMaterial)
+
+                Divider()
+
+                // Großer Editor - im Vordergrund
                 TextEditor(text: $bindableViewModel.editContent)
-                    .frame(minHeight: 200)
-                    .font(.system(.body, design: .monospaced))
+                    .font(.system(size: 17, design: .default))
+                    .padding(20)
+                    .scrollContentBackground(.hidden)
                     .toolbar {
                         ToolbarItemGroup(placement: .keyboard) {
-                            ScrollView(.horizontal, showsIndicators: false) {
-                                HStack(spacing: 12) {
-                                    // Platzhalter einfügen
-                                    Button {
-                                        insertPlaceholder(into: $bindableViewModel.editContent)
-                                    } label: {
-                                        Label("Platzhalter", systemImage: "curlybraces")
-                                            .padding(.horizontal, 12)
-                                            .padding(.vertical, 6)
-                                            .background(Color.accentColor)
-                                            .foregroundStyle(.white)
-                                            .clipShape(Capsule())
-                                    }
-
-                                    // Einzelne Klammern für manuelle Eingabe
-                                    Button {
-                                        bindableViewModel.editContent += "{{"
-                                    } label: {
-                                        Text("{{")
-                                            .font(.system(.body, design: .monospaced))
-                                            .padding(.horizontal, 10)
-                                            .padding(.vertical, 6)
-                                            .background(Color.secondary.opacity(0.2))
-                                            .clipShape(RoundedRectangle(cornerRadius: 6))
-                                    }
-
-                                    Button {
-                                        bindableViewModel.editContent += "}}"
-                                    } label: {
-                                        Text("}}")
-                                            .font(.system(.body, design: .monospaced))
-                                            .padding(.horizontal, 10)
-                                            .padding(.vertical, 6)
-                                            .background(Color.secondary.opacity(0.2))
-                                            .clipShape(RoundedRectangle(cornerRadius: 6))
-                                    }
-
-                                    Spacer()
+                            HStack(spacing: 8) {
+                                Button {
+                                    insertPlaceholder(into: $bindableViewModel.editContent)
+                                } label: {
+                                    Label("Platzhalter", systemImage: "curlybraces")
+                                        .font(.subheadline.weight(.medium))
+                                        .padding(.horizontal, 12)
+                                        .padding(.vertical, 8)
+                                        .background(Color.accentColor)
+                                        .foregroundStyle(.white)
+                                        .clipShape(Capsule())
                                 }
-                            }
-                        }
-                    }
 
-                HStack {
-                    Text("\(bindableViewModel.editContent.count) Zeichen")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+                                Spacer()
 
-                    Spacer()
-
-                    let placeholderCount = viewModel.getDetectedPlaceholderKeys().count
-                    Label("\(placeholderCount) Platzhalter", systemImage: "curlybraces")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-            } header: {
-                Text("Prompt-Inhalt")
-            } footer: {
-                Text("Verwenden Sie {{key}} für Platzhalter oder nutzen Sie die Tastatur-Toolbar")
-            }
-
-            // Platzhalter-Verwaltung
-            Section("Platzhalter") {
-                let detectedKeys = viewModel.getDetectedPlaceholderKeys()
-                let missingKeys = viewModel.getMissingPlaceholderDefinitions()
-
-                if detectedKeys.isEmpty {
-                    Text("Keine Platzhalter gefunden")
-                        .foregroundStyle(.secondary)
-                } else {
-                    ForEach(detectedKeys, id: \.self) { key in
-                        HStack {
-                            Text("{{\(key)}}")
-                                .font(.system(.body, design: .monospaced))
-
-                            Spacer()
-
-                            if missingKeys.contains(key) {
-                                Label("Nicht definiert", systemImage: "exclamationmark.triangle")
-                                    .font(.caption)
-                                    .foregroundStyle(.orange)
-                            } else {
-                                Image(systemName: "checkmark.circle.fill")
-                                    .foregroundStyle(.green)
-                                    .font(.caption)
-                            }
-                        }
-                    }
-
-                    Button {
-                        viewModel.detectAndSyncPlaceholders()
-                    } label: {
-                        Label("Platzhalter synchronisieren", systemImage: "arrow.triangle.2.circlepath")
-                    }
-                }
-            }
-
-            // Tags
-            Section("Tags") {
-                // Bestehende Tags
-                if !bindableViewModel.editTags.isEmpty {
-                    ScrollView(.horizontal, showsIndicators: false) {
-                        HStack {
-                            ForEach(bindableViewModel.editTags, id: \.self) { tag in
-                                HStack(spacing: 4) {
-                                    Text(tag)
-                                    Button {
-                                        viewModel.removeTag(tag)
-                                    } label: {
-                                        Image(systemName: "xmark.circle.fill")
-                                            .font(.caption)
-                                    }
+                                Button("Fertig") {
+                                    hideKeyboard()
                                 }
-                                .padding(.horizontal, 12)
-                                .padding(.vertical, 6)
-                                .background(Color.accentColor)
-                                .foregroundStyle(.white)
-                                .clipShape(Capsule())
+                                .font(.subheadline.weight(.medium))
                             }
                         }
                     }
-                }
+            }
 
-                // Neuer Tag
+            // Floating Action Button für Generator
+            Button {
+                showGenerator = true
+            } label: {
                 HStack {
-                    TextField("Neuer Tag", text: $bindableViewModel.newTagInput)
-                        .onSubmit {
-                            viewModel.addTag()
-                        }
-
-                    Button("Hinzufügen") {
-                        viewModel.addTag()
-                    }
-                    .disabled(bindableViewModel.newTagInput.trimmingCharacters(in: .whitespaces).isEmpty)
+                    Image(systemName: "wand.and.stars.inverse")
+                    Text("Generieren")
+                        .font(.headline)
                 }
+                .foregroundStyle(.white)
+                .padding(.horizontal, 24)
+                .padding(.vertical, 16)
+                .background(
+                    Capsule()
+                        .fill(Color.accentColor)
+                        .shadow(color: .black.opacity(0.2), radius: 8, y: 4)
+                )
             }
-
-            // Aktionen
-            Section {
-                Button {
-                    showGenerator = true
-                } label: {
-                    Label("Prompt generieren", systemImage: "wand.and.stars")
-                }
-
-                Toggle("Als Favorit markieren", isOn: $bindableTemplate.isFavorite)
-            }
+            .padding(24)
         }
         .toolbar {
             ToolbarItem(placement: .confirmationAction) {
-                Button("Speichern") {
+                Button("Fertig") {
                     viewModel.save()
+                    dismiss()
                 }
+                .font(.body.weight(.semibold))
             }
         }
         .alert("Fehler", isPresented: .constant(viewModel.errorMessage != nil)) {
@@ -228,7 +164,7 @@ struct PromptEditorView: View {
         .overlay(alignment: .top) {
             if let success = viewModel.successMessage {
                 ModernToast(message: success, type: .success)
-                    .padding(.top, DesignSystem.Spacing.sm)
+                    .padding(.top, 8)
                     .transition(.move(edge: .top).combined(with: .opacity))
             }
         }
@@ -236,9 +172,14 @@ struct PromptEditorView: View {
         .navigationDestination(isPresented: $showGenerator) {
             PromptGeneratorView(template: template)
         }
+        .navigationBarTitleDisplayMode(.inline)
     }
 
     // MARK: - Helper Methods
+
+    private func hideKeyboard() {
+        UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+    }
 
     /// Fügt einen Platzhalter an der aktuellen Position ein
     private func insertPlaceholder(into binding: Binding<String>) {

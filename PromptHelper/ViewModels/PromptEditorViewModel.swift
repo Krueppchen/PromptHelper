@@ -19,7 +19,12 @@ final class PromptEditorViewModel {
     /// Temporäre Editier-Werte
     var editTitle: String
     var editDescription: String
-    var editContent: String
+    var editContent: String {
+        didSet {
+            // Automatische Synchronisation mit Debounce
+            scheduleAutoSync()
+        }
+    }
     var editTags: [String]
 
     /// Neuer Tag-Input
@@ -37,11 +42,17 @@ final class PromptEditorViewModel {
     /// Navigation zu Generator
     var showGenerator = false
 
+    /// Zeigt an, ob gerade eine automatische Synchronisation läuft
+    var isAutoSyncing = false
+
     /// ModelContext für Datenbank-Operationen
     private let context: ModelContext
 
     /// Service für Platzhalter-Erkennung
     private let detectionService = PlaceholderDetectionService()
+
+    /// Debounce-Timer für automatische Synchronisation
+    private var autoSyncTask: Task<Void, Never>?
 
     // MARK: - Initialisierung
 
@@ -161,5 +172,59 @@ final class PromptEditorViewModel {
             for: template,
             globalPlaceholders: globalPlaceholders
         )
+    }
+
+    // MARK: - Private Methods
+
+    /// Plant eine automatische Synchronisation mit Debounce
+    private func scheduleAutoSync() {
+        // Abbrechen der vorherigen Auto-Sync-Aufgabe
+        autoSyncTask?.cancel()
+
+        // Neue Aufgabe planen (1 Sekunde Verzögerung)
+        autoSyncTask = Task { @MainActor in
+            do {
+                try await Task.sleep(nanoseconds: 1_000_000_000) // 1 Sekunde
+
+                // Prüfen, ob die Aufgabe abgebrochen wurde
+                guard !Task.isCancelled else { return }
+
+                // Automatische Synchronisation durchführen
+                await performAutoSync()
+            } catch {
+                // Task wurde abgebrochen oder Fehler aufgetreten
+            }
+        }
+    }
+
+    /// Führt die automatische Synchronisation durch
+    private func performAutoSync() async {
+        isAutoSyncing = true
+
+        // Lade alle globalen Platzhalter
+        let descriptor = FetchDescriptor<PlaceholderDefinition>(
+            predicate: #Predicate { $0.isGlobal == true }
+        )
+
+        guard let globalPlaceholders = try? context.fetch(descriptor) else {
+            isAutoSyncing = false
+            return
+        }
+
+        // Synchronisiere
+        detectionService.syncPlaceholders(
+            for: template,
+            context: context,
+            globalPlaceholders: globalPlaceholders
+        )
+
+        // Speichere
+        do {
+            try context.save()
+        } catch {
+            // Fehler beim automatischen Speichern - wird ignoriert
+        }
+
+        isAutoSyncing = false
     }
 }

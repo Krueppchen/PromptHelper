@@ -21,7 +21,6 @@ struct PlaceholderEditorView: View {
     @State private var editLabel: String
     @State private var editType: PlaceholderType
     @State private var editOptions: [String]
-    @State private var editIsGlobal: Bool
     @State private var editDefaultValue: String
     @State private var editDescription: String
 
@@ -38,126 +37,135 @@ struct PlaceholderEditorView: View {
         _editLabel = State(initialValue: placeholder.label)
         _editType = State(initialValue: placeholder.type)
         _editOptions = State(initialValue: placeholder.options)
-        _editIsGlobal = State(initialValue: placeholder.isGlobal)
         _editDefaultValue = State(initialValue: placeholder.defaultValue ?? "")
         _editDescription = State(initialValue: placeholder.descriptionText ?? "")
     }
 
     var body: some View {
-        Form {
-            // Basis-Informationen
-            Section("Informationen") {
-                TextField("Label", text: $editLabel)
+        VStack(spacing: 0) {
+            ScrollView {
+                VStack(spacing: 24) {
+                    // Icon & Titel
+                    VStack(spacing: 12) {
+                        Image(systemName: editType.iconName)
+                            .font(.system(size: 48, weight: .light))
+                            .foregroundStyle(Color.accentColor)
 
-                HStack {
-                    TextField("Schlüssel", text: $editKey)
-                        .font(.system(.body, design: .monospaced))
-                        .autocapitalization(.none)
-
-                    Button {
-                        editKey = PlaceholderDetectionService().suggestKey(from: editLabel)
-                    } label: {
-                        Image(systemName: "wand.and.stars")
+                        TextField("Name des Platzhalters", text: $editLabel)
+                            .font(.title2.weight(.semibold))
+                            .multilineTextAlignment(.center)
+                            .textFieldStyle(.plain)
                     }
-                }
+                    .padding(.top, 20)
 
-                TextField("Beschreibung (optional)", text: $editDescription, axis: .vertical)
-                    .lineLimit(2...4)
-            }
+                    VStack(spacing: 16) {
+                        // Typ-Picker
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("Typ")
+                                .font(.subheadline.weight(.medium))
+                                .foregroundStyle(.secondary)
 
-            // Typ und Einstellungen
-            Section("Typ") {
-                Picker("Platzhalter-Typ", selection: $editType) {
-                    ForEach(PlaceholderType.allCases, id: \.self) { type in
-                        Text(type.displayName).tag(type)
-                    }
-                }
-                .onChange(of: editType) { _, newType in
-                    // Lösche Optionen, wenn nicht mehr benötigt
-                    if !newType.requiresOptions {
-                        editOptions.removeAll()
-                    }
-                }
-            }
-
-            // Optionen für Choice-Typen
-            if editType.requiresOptions {
-                Section {
-                    if editOptions.isEmpty {
-                        Text("Noch keine Optionen definiert")
-                            .foregroundStyle(.secondary)
-                    } else {
-                        ForEach(Array(editOptions.enumerated()), id: \.offset) { index, option in
-                            HStack {
-                                Text("\(index + 1).")
-                                    .foregroundStyle(.secondary)
-                                    .frame(width: 30)
-
-                                Text(option)
-
-                                Spacer()
-
-                                Button {
-                                    editOptions.remove(at: index)
-                                } label: {
-                                    Image(systemName: "minus.circle.fill")
-                                        .foregroundStyle(.red)
+                            Picker("Typ", selection: $editType) {
+                                ForEach(PlaceholderType.allCases, id: \.self) { type in
+                                    Label(type.displayName, systemImage: type.iconName).tag(type)
+                                }
+                            }
+                            .pickerStyle(.segmented)
+                            .onChange(of: editType) { _, newType in
+                                if !newType.requiresOptions {
+                                    editOptions.removeAll()
                                 }
                             }
                         }
-                        .onMove { from, to in
-                            editOptions.move(fromOffsets: from, toOffset: to)
-                        }
-                    }
 
-                    // Neue Option hinzufügen
-                    HStack {
-                        TextField("Neue Option", text: $newOptionInput)
-                            .onSubmit {
-                                addOption()
+                        // Key (automatisch generiert)
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("Schlüssel")
+                                .font(.subheadline.weight(.medium))
+                                .foregroundStyle(.secondary)
+
+                            Text("{{\(editKey)}}")
+                                .font(.body.monospaced())
+                                .foregroundStyle(.primary)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .padding(12)
+                                .background(Color.accentColor.opacity(0.1))
+                                .cornerRadius(8)
+                        }
+                        .onAppear {
+                            if editKey == "neuer_platzhalter" {
+                                editKey = PlaceholderDetectionService().suggestKey(from: editLabel)
                             }
-
-                        Button("Hinzufügen") {
-                            addOption()
                         }
-                        .disabled(newOptionInput.trimmingCharacters(in: .whitespaces).isEmpty)
+                        .onChange(of: editLabel) { _, newLabel in
+                            editKey = PlaceholderDetectionService().suggestKey(from: newLabel)
+                        }
+
+                        // Optionen (wenn nötig)
+                        if editType.requiresOptions {
+                            VStack(alignment: .leading, spacing: 8) {
+                                Text("Optionen")
+                                    .font(.subheadline.weight(.medium))
+                                    .foregroundStyle(.secondary)
+
+                                if !editOptions.isEmpty {
+                                    VStack(spacing: 8) {
+                                        ForEach(Array(editOptions.enumerated()), id: \.offset) { index, option in
+                                            HStack {
+                                                Text(option)
+                                                Spacer()
+                                                Button {
+                                                    editOptions.remove(at: index)
+                                                } label: {
+                                                    Image(systemName: "xmark.circle.fill")
+                                                        .foregroundStyle(.secondary)
+                                                }
+                                            }
+                                            .padding(12)
+                                            .background(Color(.systemGray6))
+                                            .cornerRadius(8)
+                                        }
+                                    }
+                                }
+
+                                HStack {
+                                    TextField("Neue Option", text: $newOptionInput)
+                                        .textFieldStyle(.roundedBorder)
+
+                                    Button {
+                                        addOption()
+                                    } label: {
+                                        Image(systemName: "plus.circle.fill")
+                                            .font(.title2)
+                                    }
+                                    .disabled(newOptionInput.trimmingCharacters(in: .whitespaces).isEmpty)
+                                }
+                            }
+                        }
+
+                        // Standardwert
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("Standardwert (optional)")
+                                .font(.subheadline.weight(.medium))
+                                .foregroundStyle(.secondary)
+
+                            TextField("z.B. Beispieltext", text: $editDefaultValue)
+                                .textFieldStyle(.roundedBorder)
+                        }
                     }
-                } header: {
-                    Text("Optionen")
-                } footer: {
-                    Text("Definieren Sie die möglichen Werte für die Auswahl")
+                    .padding(.horizontal, 20)
                 }
-            }
-
-            // Erweiterte Einstellungen
-            Section("Einstellungen") {
-                Toggle("Global verfügbar", isOn: $editIsGlobal)
-
-                TextField("Standardwert (optional)", text: $editDefaultValue)
-            }
-
-            // Vorschau
-            Section("Vorschau") {
-                PlaceholderInputView(
-                    placeholder: PlaceholderDefinition(
-                        key: editKey,
-                        label: editLabel,
-                        type: editType,
-                        options: editOptions,
-                        defaultValue: editDefaultValue.isEmpty ? nil : editDefaultValue
-                    ),
-                    value: .constant("")
-                )
+                .padding(.bottom, 40)
             }
         }
-        .navigationTitle("Platzhalter bearbeiten")
+        .navigationTitle("Platzhalter")
         .navigationBarTitleDisplayMode(.inline)
-        .background(DesignSystem.SemanticColor.background)
         .toolbar {
             ToolbarItem(placement: .confirmationAction) {
-                Button("Speichern") {
+                Button("Fertig") {
                     save()
                 }
+                .font(.body.weight(.semibold))
             }
         }
         .alert("Fehler", isPresented: .constant(errorMessage != nil)) {
@@ -172,7 +180,7 @@ struct PlaceholderEditorView: View {
         .overlay(alignment: .top) {
             if let success = successMessage {
                 ModernToast(message: success, type: .success)
-                    .padding(.top, DesignSystem.Spacing.sm)
+                    .padding(.top, 8)
                     .transition(.move(edge: .top).combined(with: .opacity))
             }
         }
@@ -220,7 +228,7 @@ struct PlaceholderEditorView: View {
         placeholder.label = editLabel
         placeholder.type = editType
         placeholder.options = editOptions
-        placeholder.isGlobal = editIsGlobal
+        placeholder.isGlobal = true // Alle Platzhalter sind jetzt standardmäßig global
         placeholder.defaultValue = editDefaultValue.isEmpty ? nil : editDefaultValue
         placeholder.descriptionText = editDescription.isEmpty ? nil : editDescription
         placeholder.updatedAt = Date()
