@@ -31,6 +31,9 @@ final class PlaceholderDefinition {
     /// True = global verfügbar, False = nur für spezifische Templates
     var isGlobal: Bool
 
+    /// True = Pflichtfeld, muss ausgefüllt werden
+    var isRequired: Bool
+
     /// Optionaler Standardwert
     var defaultValue: String?
 
@@ -67,6 +70,7 @@ final class PlaceholderDefinition {
         type: PlaceholderType = .text,
         options: [String] = [],
         isGlobal: Bool = true,
+        isRequired: Bool = false,
         defaultValue: String? = nil,
         descriptionText: String? = nil,
         tags: [String] = [],
@@ -79,6 +83,7 @@ final class PlaceholderDefinition {
         self.typeRaw = type.rawValue
         self.options = options
         self.isGlobal = isGlobal
+        self.isRequired = isRequired
         self.defaultValue = defaultValue
         self.descriptionText = descriptionText
         self.tags = tags
