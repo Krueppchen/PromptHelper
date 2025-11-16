@@ -16,6 +16,9 @@ final class PlaceholderListViewModel {
     /// Suchbegriff für die Filterung
     var searchText: String = ""
 
+    /// Gewählte Tags für die Filterung
+    var selectedTags: Set<String> = []
+
     /// Fehlermeldung
     var errorMessage: String?
 
@@ -64,11 +67,49 @@ final class PlaceholderListViewModel {
             options: placeholder.options,
             isGlobal: placeholder.isGlobal,
             defaultValue: placeholder.defaultValue,
-            descriptionText: placeholder.descriptionText
+            descriptionText: placeholder.descriptionText,
+            tags: placeholder.tags
         )
         context.insert(duplicate)
         saveContext()
         return duplicate
+    }
+
+    /// Extrahiert alle verfügbaren Tags aus allen Platzhaltern
+    /// - Parameter placeholders: Die Liste aller Platzhalter
+    /// - Returns: Eine sortierte Liste aller verfügbaren Tags
+    func getAllTags(from placeholders: [PlaceholderDefinition]) -> [String] {
+        var allTags = Set<String>()
+        for placeholder in placeholders {
+            allTags.formUnion(placeholder.tags)
+        }
+        return allTags.sorted()
+    }
+
+    /// Filtert Platzhalter nach Suchbegriff und ausgewählten Tags
+    /// - Parameter placeholders: Die Liste aller Platzhalter
+    /// - Returns: Die gefilterte Liste
+    func filterPlaceholders(_ placeholders: [PlaceholderDefinition]) -> [PlaceholderDefinition] {
+        placeholders.filter { placeholder in
+            // Tag-Filter
+            if !selectedTags.isEmpty {
+                let hasSelectedTag = selectedTags.contains { tag in
+                    placeholder.tags.contains(tag)
+                }
+                guard hasSelectedTag else { return false }
+            }
+
+            // Such-Filter
+            if !searchText.isEmpty {
+                let searchLower = searchText.lowercased()
+                let matchesKey = placeholder.key.lowercased().contains(searchLower)
+                let matchesLabel = placeholder.label.lowercased().contains(searchLower)
+
+                return matchesKey || matchesLabel
+            }
+
+            return true
+        }
     }
 
     /// Validiert einen Platzhalter-Key

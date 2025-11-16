@@ -65,8 +65,15 @@ struct PlaceholderListView: View {
                     .padding(.horizontal, DesignSystem.Spacing.md)
                     .padding(.top, DesignSystem.Spacing.sm)
 
+                // Tag Filter
+                let availableTags = viewModel.getAllTags(from: allPlaceholders)
+                if !availableTags.isEmpty {
+                    tagFilterBar(viewModel: bindableViewModel, availableTags: availableTags)
+                        .padding(.horizontal, DesignSystem.Spacing.md)
+                }
+
                 // Placeholders List
-                let filteredPlaceholders = filterPlaceholders(allPlaceholders, viewModel: viewModel)
+                let filteredPlaceholders = viewModel.filterPlaceholders(allPlaceholders)
                 if filteredPlaceholders.isEmpty {
                     ModernEmptyState(
                         icon: "curlybraces",
@@ -119,6 +126,52 @@ struct PlaceholderListView: View {
         }
     }
 
+    private func tagFilterBar(viewModel: PlaceholderListViewModel, availableTags: [String]) -> some View {
+        @Bindable var bindableViewModel = viewModel
+
+        return VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                Image(systemName: "tag")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                Text("Filter nach Tags")
+                    .font(.caption.weight(.medium))
+                    .foregroundStyle(.secondary)
+                Spacer()
+                if !bindableViewModel.selectedTags.isEmpty {
+                    Button {
+                        bindableViewModel.selectedTags.removeAll()
+                    } label: {
+                        Text("Zurücksetzen")
+                            .font(.caption)
+                            .foregroundStyle(.accentColor)
+                    }
+                }
+            }
+
+            TagFlowLayout(spacing: 8) {
+                ForEach(availableTags, id: \.self) { tag in
+                    let isSelected = bindableViewModel.selectedTags.contains(tag)
+                    Button {
+                        if isSelected {
+                            bindableViewModel.selectedTags.remove(tag)
+                        } else {
+                            bindableViewModel.selectedTags.insert(tag)
+                        }
+                    } label: {
+                        Text(tag)
+                            .font(.caption)
+                            .padding(.horizontal, 10)
+                            .padding(.vertical, 6)
+                            .background(isSelected ? Color.accentColor : Color.accentColor.opacity(0.15))
+                            .foregroundStyle(isSelected ? .white : .accentColor)
+                            .cornerRadius(12)
+                    }
+                }
+            }
+        }
+    }
+
     private func placeholdersGrid(_ placeholders: [PlaceholderDefinition]) -> some View {
         LazyVGrid(columns: [
             GridItem(.flexible(), spacing: 12),
@@ -149,21 +202,6 @@ struct PlaceholderListView: View {
     }
 
     // MARK: - Helper Methods
-
-    private func filterPlaceholders(_ placeholders: [PlaceholderDefinition], viewModel: PlaceholderListViewModel) -> [PlaceholderDefinition] {
-        placeholders.filter { placeholder in
-            // Such-Filter
-            if !viewModel.searchText.isEmpty {
-                let searchLower = viewModel.searchText.lowercased()
-                let matchesKey = placeholder.key.lowercased().contains(searchLower)
-                let matchesLabel = placeholder.label.lowercased().contains(searchLower)
-
-                return matchesKey || matchesLabel
-            }
-
-            return true
-        }
-    }
 
     private func createNewPlaceholder() {
         guard let viewModel = viewModel else { return }
@@ -207,6 +245,22 @@ struct ModernPlaceholderCard: View {
                     .padding(.vertical, 4)
                     .background(Color.accentColor.opacity(0.1))
                     .cornerRadius(4)
+
+                // Tags
+                if !placeholder.tags.isEmpty {
+                    TagFlowLayout(spacing: 4) {
+                        ForEach(placeholder.tags, id: \.self) { tag in
+                            Text(tag)
+                                .font(.caption2)
+                                .padding(.horizontal, 6)
+                                .padding(.vertical, 3)
+                                .background(Color.accentColor.opacity(0.15))
+                                .foregroundStyle(.accentColor)
+                                .cornerRadius(8)
+                        }
+                    }
+                    .padding(.horizontal, 12)
+                }
             }
             .padding(.bottom, 20)
         }

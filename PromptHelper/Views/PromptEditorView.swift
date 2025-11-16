@@ -21,6 +21,10 @@ struct PromptEditorView: View {
 
     /// Navigation-State
     @State private var showGenerator = false
+    @State private var showPlaceholderPicker = false
+
+    /// Query für alle Platzhalter
+    @Query(sort: \PlaceholderDefinition.label) private var allPlaceholders: [PlaceholderDefinition]
 
     var body: some View {
         Group {
@@ -101,7 +105,7 @@ struct PromptEditorView: View {
                         ToolbarItemGroup(placement: .keyboard) {
                             HStack(spacing: 8) {
                                 Button {
-                                    insertPlaceholder(into: $bindableViewModel.editContent)
+                                    showPlaceholderPicker = true
                                 } label: {
                                     Label("Platzhalter", systemImage: "curlybraces")
                                         .font(.subheadline.weight(.medium))
@@ -172,6 +176,15 @@ struct PromptEditorView: View {
         .navigationDestination(isPresented: $showGenerator) {
             PromptGeneratorView(template: template)
         }
+        .sheet(isPresented: $showPlaceholderPicker) {
+            PlaceholderPickerSheet(
+                placeholders: allPlaceholders,
+                onSelect: { placeholder in
+                    insertPlaceholderKey(placeholder.key, into: $bindableViewModel.editContent)
+                    showPlaceholderPicker = false
+                }
+            )
+        }
         .navigationBarTitleDisplayMode(.inline)
     }
 
@@ -181,10 +194,10 @@ struct PromptEditorView: View {
         UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
     }
 
-    /// Fügt einen Platzhalter an der aktuellen Position ein
-    private func insertPlaceholder(into binding: Binding<String>) {
-        // Füge Platzhalter-Template ein
-        binding.wrappedValue += "{{}}"
+    /// Fügt einen Platzhalter-Key an der aktuellen Position ein
+    private func insertPlaceholderKey(_ key: String, into binding: Binding<String>) {
+        // Füge Platzhalter mit Key ein
+        binding.wrappedValue += "{{\(key)}}"
     }
 }
 
