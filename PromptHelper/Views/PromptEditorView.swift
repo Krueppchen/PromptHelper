@@ -119,7 +119,7 @@ struct PromptEditorView: View {
                 .padding(.vertical, 8)
                 .background(DesignSystem.SemanticColor.accent.opacity(0.05))
 
-                // Großer Editor - im Vordergrund mit verbesserter Visualisierung
+                // Großer Editor - mit Syntax-Highlighting für Platzhalter
                 ZStack(alignment: .topLeading) {
                     // Placeholder Text wenn leer
                     if bindableViewModel.editContent.isEmpty {
@@ -133,13 +133,15 @@ struct PromptEditorView: View {
                                 .foregroundStyle(DesignSystem.SemanticColor.accent.opacity(0.7))
                         }
                         .padding(20)
+                        .allowsHitTesting(false)
                     }
 
-                    TextEditor(text: $bindableViewModel.editContent)
-                        .font(.system(size: 17, design: .default))
-                        .padding(20)
-                        .scrollContentBackground(.hidden)
-                        .opacity(bindableViewModel.editContent.isEmpty ? 0.5 : 1)
+                    HighlightedTextEditor(
+                        text: $bindableViewModel.editContent,
+                        placeholder: "Beginnen Sie mit dem Schreiben...",
+                        highlightColor: UIColor(DesignSystem.Colors.primary)
+                    )
+                    .opacity(bindableViewModel.editContent.isEmpty ? 0.5 : 1)
                 }
                 .background(
                     RoundedRectangle(cornerRadius: 0)
@@ -227,7 +229,7 @@ struct PromptEditorView: View {
         }
         .animation(DesignSystem.Animation.smooth, value: viewModel.successMessage)
         .navigationDestination(isPresented: $showGenerator) {
-            PromptGeneratorView(template: template)
+            PromptGeneratorView(template: template, context: modelContext)
         }
         .sheet(isPresented: $showPlaceholderPicker) {
             PlaceholderPickerSheet(
