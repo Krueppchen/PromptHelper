@@ -83,6 +83,9 @@ final class PromptListViewModel {
     func deleteTemplate(_ template: PromptTemplate) {
         context.delete(template)
         saveContext()
+
+        // Haptisches Feedback für destructive Aktion
+        HapticFeedback.medium()
     }
 
     /// Togglet den Favoriten-Status eines Templates
@@ -91,6 +94,9 @@ final class PromptListViewModel {
         template.isFavorite.toggle()
         template.markAsUpdated()
         saveContext()
+
+        // Haptisches Feedback für Favoriten-Toggle
+        HapticFeedback.light()
     }
 
     /// Gibt alle eindeutigen Tags zurück

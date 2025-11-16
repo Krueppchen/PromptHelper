@@ -164,8 +164,9 @@ enum DesignSystem {
         /// Success-Icon-Farbe (hellere Variante für grafische Elemente)
         static let successIcon = BrandColor.mutedTeal
 
-        static let warning = Color.orange
-        static let error = Color.red
+        // System Semantic Colors (iOS-Standard)
+        static let warning = Color(.systemOrange)
+        static let error = Color(.systemRed)
         static let info = BrandColor.stormyTeal
 
         // Card backgrounds

@@ -89,12 +89,18 @@ final class PromptGeneratorViewModel {
             successMessage = "Prompt generiert!"
             errorMessage = nil
 
+            // Haptisches Feedback für erfolgreiche Generierung
+            HapticFeedback.success()
+
             // Speichere in Historie (optional)
             saveToHistory(prompt: prompt)
 
         case .failure(let error):
             errorMessage = error.localizedDescription
             successMessage = nil
+
+            // Haptisches Feedback für Fehler
+            HapticFeedback.error()
         }
     }
 
@@ -108,6 +114,9 @@ final class PromptGeneratorViewModel {
         #if os(iOS)
         UIPasteboard.general.string = generatedPrompt
         successMessage = "In Zwischenablage kopiert!"
+
+        // Haptisches Feedback für erfolgreiche Aktion
+        HapticFeedback.success()
 
         // Verstecke Success-Message nach 2 Sekunden
         Task {
