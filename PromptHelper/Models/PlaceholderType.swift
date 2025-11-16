@@ -50,4 +50,20 @@ enum PlaceholderType: String, Codable, CaseIterable {
             return false
         }
     }
+
+    /// SF Symbol Icon-Name für jeden Typ
+    var iconName: String {
+        switch self {
+        case .text:
+            return "textformat"
+        case .number:
+            return "number"
+        case .date:
+            return "calendar"
+        case .singleChoice:
+            return "list.bullet.circle"
+        case .multiChoice:
+            return "checklist"
+        }
+    }
 }

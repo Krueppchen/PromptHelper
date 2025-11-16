@@ -120,14 +120,15 @@ struct PlaceholderListView: View {
     }
 
     private func placeholdersGrid(_ placeholders: [PlaceholderDefinition]) -> some View {
-        LazyVStack(spacing: DesignSystem.Spacing.md) {
+        LazyVGrid(columns: [
+            GridItem(.flexible(), spacing: 12),
+            GridItem(.flexible(), spacing: 12)
+        ], spacing: 12) {
             ForEach(placeholders) { placeholder in
                 ModernPlaceholderCard(placeholder: placeholder)
                     .contentShape(Rectangle())
                     .onTapGesture {
-                        withAnimation(DesignSystem.Animation.smooth) {
-                            selectedPlaceholder = placeholder
-                        }
+                        selectedPlaceholder = placeholder
                     }
                     .contextMenu {
                         Button {
@@ -137,17 +138,12 @@ struct PlaceholderListView: View {
                             Label("Duplizieren", systemImage: "doc.on.doc")
                         }
 
-                        Divider()
-
                         Button(role: .destructive) {
-                            withAnimation(DesignSystem.Animation.smooth) {
-                                viewModel?.deletePlaceholder(placeholder)
-                            }
+                            viewModel?.deletePlaceholder(placeholder)
                         } label: {
                             Label("Löschen", systemImage: "trash")
                         }
                     }
-                    .transition(.scale.combined(with: .opacity))
             }
         }
     }
@@ -178,104 +174,48 @@ struct PlaceholderListView: View {
 
 // MARK: - Modern Placeholder Card
 
-/// Moderne Card-View für einen Platzhalter
+/// Vereinfachte Card-View für einen Platzhalter - minimalistisch und klar
 struct ModernPlaceholderCard: View {
     let placeholder: PlaceholderDefinition
 
     var body: some View {
-        ModernCard(padding: DesignSystem.Spacing.md) {
-            VStack(alignment: .leading, spacing: DesignSystem.Spacing.md) {
-                // Header mit Icon und Global-Badge
-                HStack(alignment: .top, spacing: DesignSystem.Spacing.md) {
-                    ModernIconBadge(
-                        icon: placeholder.type.iconName,
-                        size: 52,
-                        iconSize: DesignSystem.IconSize.lg,
-                        backgroundColor: DesignSystem.SemanticColor.accent.opacity(0.15),
-                        foregroundColor: DesignSystem.SemanticColor.accent
-                    )
+        VStack(spacing: 16) {
+            // Großes Icon
+            Image(systemName: placeholder.type.iconName)
+                .font(.system(size: 36, weight: .light))
+                .foregroundStyle(Color.accentColor)
+                .frame(maxWidth: .infinity)
+                .padding(.top, 20)
 
-                    VStack(alignment: .leading, spacing: DesignSystem.Spacing.xs) {
-                        Text(placeholder.label)
-                            .font(DesignSystem.Typography.title3)
-                            .foregroundStyle(DesignSystem.SemanticColor.primary)
-                            .lineLimit(1)
+            VStack(spacing: 6) {
+                // Label
+                Text(placeholder.label)
+                    .font(.headline)
+                    .multilineTextAlignment(.center)
+                    .lineLimit(2)
 
-                        Text("{{\(placeholder.key)}}")
-                            .font(DesignSystem.Typography.bodyMonospaced)
-                            .foregroundStyle(DesignSystem.SemanticColor.secondary)
-                            .padding(.horizontal, DesignSystem.Spacing.sm)
-                            .padding(.vertical, DesignSystem.Spacing.xxs)
-                            .background(DesignSystem.SemanticColor.tertiaryBackground)
-                            .cornerRadius(DesignSystem.CornerRadius.sm)
-                    }
-                }
+                // Key subtil
+                Text("{{\(placeholder.key)}}")
+                    .font(.caption.monospaced())
+                    .foregroundStyle(.secondary)
 
-                // Description
-                if let description = placeholder.descriptionText, !description.isEmpty {
-                    Text(description)
-                        .font(DesignSystem.Typography.subheadline)
-                        .foregroundStyle(DesignSystem.SemanticColor.secondary)
-                        .lineLimit(2)
-                }
-
-                // Type and Options
-                HStack(spacing: DesignSystem.Spacing.xs) {
-                    ModernBadge(text: placeholder.type.displayName, style: .accent)
-
-                    if placeholder.type.requiresOptions && !placeholder.options.isEmpty {
-                        ModernBadge(
-                            text: "\(placeholder.options.count) Optionen",
-                            icon: "list.bullet",
-                            style: .default
-                        )
-                    }
-
-                    Spacer()
-
-                    Image(systemName: "chevron.right")
-                        .font(.system(size: DesignSystem.IconSize.xs, weight: .semibold))
-                        .foregroundStyle(DesignSystem.SemanticColor.tertiary)
-                }
-
-                // Options Preview
-                if placeholder.type.requiresOptions && !placeholder.options.isEmpty {
-                    Divider()
-                        .padding(.vertical, DesignSystem.Spacing.xxs)
-
-                    ScrollView(.horizontal, showsIndicators: false) {
-                        HStack(spacing: DesignSystem.Spacing.xs) {
-                            ForEach(placeholder.options.prefix(5), id: \.self) { option in
-                                Text(option)
-                                    .font(DesignSystem.Typography.caption2)
-                                    .padding(.horizontal, DesignSystem.Spacing.sm)
-                                    .padding(.vertical, DesignSystem.Spacing.xxs)
-                                    .background(DesignSystem.SemanticColor.secondaryBackground)
-                                    .foregroundStyle(DesignSystem.SemanticColor.secondary)
-                                    .cornerRadius(DesignSystem.CornerRadius.sm)
-                            }
-                            if placeholder.options.count > 5 {
-                                Text("+\(placeholder.options.count - 5) mehr")
-                                    .font(DesignSystem.Typography.caption2)
-                                    .foregroundStyle(DesignSystem.SemanticColor.tertiary)
-                            }
-                        }
-                    }
-                }
+                // Typ
+                Text(placeholder.type.displayName)
+                    .font(.caption2)
+                    .foregroundStyle(.tertiary)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 4)
+                    .background(Color.accentColor.opacity(0.1))
+                    .cornerRadius(4)
             }
+            .padding(.bottom, 20)
         }
-    }
-}
-
-extension PlaceholderType {
-    var iconName: String {
-        switch self {
-        case .text: return "textformat"
-        case .number: return "number"
-        case .date: return "calendar"
-        case .singleChoice: return "list.bullet.circle"
-        case .multiChoice: return "checklist"
-        }
+        .frame(maxWidth: .infinity)
+        .background(
+            RoundedRectangle(cornerRadius: 16)
+                .fill(.background)
+                .shadow(color: .black.opacity(0.05), radius: 8, y: 2)
+        )
     }
 }
 
