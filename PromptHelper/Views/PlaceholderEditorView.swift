@@ -51,25 +51,44 @@ struct PlaceholderEditorView: View {
             ScrollView {
                 VStack(spacing: 24) {
                     // Icon & Titel
-                    VStack(spacing: 12) {
+                    VStack(spacing: DesignSystem.Spacing.md) {
                         Image(systemName: editType.iconName)
                             .font(.system(size: 48, weight: .light))
-                            .foregroundStyle(Color.accentColor)
+                            .foregroundStyle(DesignSystem.SemanticColor.accent)
 
-                        TextField("Name des Platzhalters", text: $editLabel)
-                            .font(.title2.weight(.semibold))
-                            .multilineTextAlignment(.center)
-                            .textFieldStyle(.plain)
+                        VStack(spacing: DesignSystem.Spacing.xs) {
+                            TextField("Name des Platzhalters", text: $editLabel)
+                                .font(.title2.weight(.semibold))
+                                .multilineTextAlignment(.center)
+                                .padding(DesignSystem.Spacing.sm)
+                                .background(DesignSystem.SemanticColor.tertiaryBackground)
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: DesignSystem.CornerRadius.sm)
+                                        .strokeBorder(
+                                            editLabel.isEmpty ?
+                                                DesignSystem.SemanticColor.error.opacity(0.3) :
+                                                DesignSystem.SemanticColor.accent.opacity(0.3),
+                                            lineWidth: 1
+                                        )
+                                )
+                                .cornerRadius(DesignSystem.CornerRadius.sm)
+
+                            if editLabel.isEmpty {
+                                HStack(spacing: 4) {
+                                    Image(systemName: "exclamationmark.circle.fill")
+                                        .font(.caption)
+                                    Text("Name ist erforderlich")
+                                        .font(DesignSystem.Typography.caption)
+                                }
+                                .foregroundStyle(DesignSystem.SemanticColor.error)
+                            }
+                        }
                     }
                     .padding(.top, 20)
 
-                    VStack(spacing: 16) {
+                    VStack(spacing: DesignSystem.Spacing.lg) {
                         // Typ-Picker
-                        VStack(alignment: .leading, spacing: 8) {
-                            Text("Typ")
-                                .font(.subheadline.weight(.medium))
-                                .foregroundStyle(.secondary)
-
+                        formSection(title: "Typ", icon: "slider.horizontal.3") {
                             Picker("Typ", selection: $editType) {
                                 ForEach(PlaceholderType.allCases, id: \.self) { type in
                                     Label(type.displayName, systemImage: type.iconName).tag(type)
@@ -84,18 +103,18 @@ struct PlaceholderEditorView: View {
                         }
 
                         // Key (automatisch generiert)
-                        VStack(alignment: .leading, spacing: 8) {
-                            Text("Schlüssel")
-                                .font(.subheadline.weight(.medium))
-                                .foregroundStyle(.secondary)
-
+                        formSection(title: "Schlüssel", icon: "key.fill") {
                             Text("{{\(editKey)}}")
                                 .font(.body.monospaced())
                                 .foregroundStyle(.primary)
                                 .frame(maxWidth: .infinity, alignment: .leading)
-                                .padding(12)
-                                .background(Color.accentColor.opacity(0.1))
-                                .cornerRadius(8)
+                                .padding(DesignSystem.Spacing.sm)
+                                .background(DesignSystem.SemanticColor.accent.opacity(0.1))
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: DesignSystem.CornerRadius.sm)
+                                        .strokeBorder(DesignSystem.SemanticColor.accent.opacity(0.3), lineWidth: 1)
+                                )
+                                .cornerRadius(DesignSystem.CornerRadius.sm)
                         }
                         .onAppear {
                             if editKey == "neuer_platzhalter" {
@@ -108,100 +127,131 @@ struct PlaceholderEditorView: View {
 
                         // Optionen (wenn nötig)
                         if editType.requiresOptions {
-                            VStack(alignment: .leading, spacing: 8) {
-                                Text("Optionen")
-                                    .font(.subheadline.weight(.medium))
-                                    .foregroundStyle(.secondary)
-
-                                if !editOptions.isEmpty {
-                                    VStack(spacing: 8) {
-                                        ForEach(Array(editOptions.enumerated()), id: \.offset) { index, option in
-                                            HStack {
-                                                Text(option)
-                                                Spacer()
-                                                Button {
-                                                    editOptions.remove(at: index)
-                                                } label: {
-                                                    Image(systemName: "xmark.circle.fill")
-                                                        .foregroundStyle(.secondary)
+                            formSection(title: "Optionen", icon: "list.bullet") {
+                                VStack(spacing: DesignSystem.Spacing.sm) {
+                                    if !editOptions.isEmpty {
+                                        VStack(spacing: DesignSystem.Spacing.xs) {
+                                            ForEach(Array(editOptions.enumerated()), id: \.offset) { index, option in
+                                                HStack {
+                                                    Text(option)
+                                                        .font(DesignSystem.Typography.body)
+                                                    Spacer()
+                                                    Button {
+                                                        editOptions.remove(at: index)
+                                                    } label: {
+                                                        Image(systemName: "xmark.circle.fill")
+                                                            .foregroundStyle(.secondary)
+                                                    }
                                                 }
+                                                .padding(DesignSystem.Spacing.sm)
+                                                .background(DesignSystem.SemanticColor.tertiaryBackground)
+                                                .cornerRadius(DesignSystem.CornerRadius.sm)
                                             }
-                                            .padding(12)
-                                            .background(Color(.systemGray6))
-                                            .cornerRadius(8)
                                         }
+                                    } else {
+                                        HStack {
+                                            Image(systemName: "info.circle")
+                                                .foregroundStyle(DesignSystem.SemanticColor.info)
+                                            Text("Fügen Sie Optionen hinzu")
+                                                .font(DesignSystem.Typography.caption)
+                                                .foregroundStyle(DesignSystem.SemanticColor.secondary)
+                                        }
+                                        .padding(DesignSystem.Spacing.sm)
+                                        .frame(maxWidth: .infinity)
+                                        .background(DesignSystem.SemanticColor.info.opacity(0.1))
+                                        .cornerRadius(DesignSystem.CornerRadius.sm)
                                     }
-                                }
 
-                                HStack {
-                                    TextField("Neue Option", text: $newOptionInput)
-                                        .textFieldStyle(.roundedBorder)
+                                    HStack {
+                                        TextField("Neue Option", text: $newOptionInput)
+                                            .padding(DesignSystem.Spacing.sm)
+                                            .background(DesignSystem.SemanticColor.tertiaryBackground)
+                                            .overlay(
+                                                RoundedRectangle(cornerRadius: DesignSystem.CornerRadius.sm)
+                                                    .strokeBorder(Color.secondary.opacity(0.3), lineWidth: 1)
+                                            )
+                                            .cornerRadius(DesignSystem.CornerRadius.sm)
 
-                                    Button {
-                                        addOption()
-                                    } label: {
-                                        Image(systemName: "plus.circle.fill")
-                                            .font(.title2)
+                                        Button {
+                                            addOption()
+                                        } label: {
+                                            Image(systemName: "plus.circle.fill")
+                                                .font(.title2)
+                                                .foregroundStyle(
+                                                    newOptionInput.trimmingCharacters(in: .whitespaces).isEmpty ?
+                                                        Color.secondary : DesignSystem.SemanticColor.accent
+                                                )
+                                        }
+                                        .disabled(newOptionInput.trimmingCharacters(in: .whitespaces).isEmpty)
                                     }
-                                    .disabled(newOptionInput.trimmingCharacters(in: .whitespaces).isEmpty)
                                 }
                             }
                         }
 
                         // Standardwert
-                        VStack(alignment: .leading, spacing: 8) {
-                            Text("Standardwert (optional)")
-                                .font(.subheadline.weight(.medium))
-                                .foregroundStyle(.secondary)
-
+                        formSection(title: "Standardwert (optional)", icon: "text.quote") {
                             TextField("z.B. Beispieltext", text: $editDefaultValue)
-                                .textFieldStyle(.roundedBorder)
+                                .padding(DesignSystem.Spacing.sm)
+                                .background(DesignSystem.SemanticColor.tertiaryBackground)
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: DesignSystem.CornerRadius.sm)
+                                        .strokeBorder(Color.secondary.opacity(0.3), lineWidth: 1)
+                                )
+                                .cornerRadius(DesignSystem.CornerRadius.sm)
                         }
 
                         // Tags
-                        VStack(alignment: .leading, spacing: 8) {
-                            Text("Tags")
-                                .font(.subheadline.weight(.medium))
-                                .foregroundStyle(.secondary)
+                        formSection(title: "Tags", icon: "tag.fill") {
+                            VStack(spacing: DesignSystem.Spacing.sm) {
+                                if !editTags.isEmpty {
+                                    TagFlowLayout(spacing: 8) {
+                                        ForEach(Array(editTags.enumerated()), id: \.offset) { index, tag in
+                                            HStack(spacing: 4) {
+                                                Text(tag)
+                                                    .font(DesignSystem.Typography.caption)
 
-                            if !editTags.isEmpty {
-                                TagFlowLayout(spacing: 8) {
-                                    ForEach(Array(editTags.enumerated()), id: \.offset) { index, tag in
-                                        HStack(spacing: 4) {
-                                            Text(tag)
-                                                .font(.caption)
-
-                                            Button {
-                                                editTags.remove(at: index)
-                                            } label: {
-                                                Image(systemName: "xmark.circle.fill")
-                                                    .font(.caption)
-                                                    .foregroundStyle(.secondary)
+                                                Button {
+                                                    editTags.remove(at: index)
+                                                } label: {
+                                                    Image(systemName: "xmark.circle.fill")
+                                                        .font(.caption)
+                                                        .foregroundStyle(.secondary)
+                                                }
                                             }
+                                            .padding(.horizontal, 10)
+                                            .padding(.vertical, 6)
+                                            .background(DesignSystem.SemanticColor.accent.opacity(0.15))
+                                            .foregroundStyle(DesignSystem.SemanticColor.accent)
+                                            .cornerRadius(DesignSystem.CornerRadius.chip)
                                         }
-                                        .padding(.horizontal, 10)
-                                        .padding(.vertical, 6)
-                                        .background(Color.accentColor.opacity(0.15))
-                                        .foregroundStyle(Color.accentColor)
-                                        .cornerRadius(12)
                                     }
                                 }
-                            }
 
-                            HStack {
-                                TextField("Neuer Tag", text: $newTagInput)
-                                    .textFieldStyle(.roundedBorder)
-                                    .onSubmit {
+                                HStack {
+                                    TextField("Neuer Tag", text: $newTagInput)
+                                        .padding(DesignSystem.Spacing.sm)
+                                        .background(DesignSystem.SemanticColor.tertiaryBackground)
+                                        .overlay(
+                                            RoundedRectangle(cornerRadius: DesignSystem.CornerRadius.sm)
+                                                .strokeBorder(Color.secondary.opacity(0.3), lineWidth: 1)
+                                        )
+                                        .cornerRadius(DesignSystem.CornerRadius.sm)
+                                        .onSubmit {
+                                            addTag()
+                                        }
+
+                                    Button {
                                         addTag()
+                                    } label: {
+                                        Image(systemName: "plus.circle.fill")
+                                            .font(.title2)
+                                            .foregroundStyle(
+                                                newTagInput.trimmingCharacters(in: .whitespaces).isEmpty ?
+                                                    Color.secondary : DesignSystem.SemanticColor.accent
+                                            )
                                     }
-
-                                Button {
-                                    addTag()
-                                } label: {
-                                    Image(systemName: "plus.circle.fill")
-                                        .font(.title2)
+                                    .disabled(newTagInput.trimmingCharacters(in: .whitespaces).isEmpty)
                                 }
-                                .disabled(newTagInput.trimmingCharacters(in: .whitespaces).isEmpty)
                             }
                         }
                     }
@@ -240,6 +290,23 @@ struct PlaceholderEditorView: View {
     }
 
     // MARK: - Helper Methods
+
+    @ViewBuilder
+    private func formSection<Content: View>(title: String, icon: String, @ViewBuilder content: () -> Content) -> some View {
+        VStack(alignment: .leading, spacing: DesignSystem.Spacing.sm) {
+            HStack(spacing: DesignSystem.Spacing.xs) {
+                Image(systemName: icon)
+                    .font(.system(size: DesignSystem.IconSize.sm))
+                    .foregroundStyle(DesignSystem.SemanticColor.accent)
+
+                Text(title)
+                    .font(DesignSystem.Typography.subheadline.weight(.medium))
+                    .foregroundStyle(DesignSystem.SemanticColor.secondary)
+            }
+
+            content()
+        }
+    }
 
     private func addOption() {
         let option = newOptionInput.trimmingCharacters(in: .whitespaces)
