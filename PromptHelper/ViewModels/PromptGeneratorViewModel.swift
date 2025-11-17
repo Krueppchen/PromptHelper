@@ -25,11 +25,6 @@ final class PromptGeneratorViewModel {
     /// Vorschau-Modus aktiv
     var showPreview: Bool = false
 
-    /// Computed Property für die Live-Vorschau
-    var currentPreview: String {
-        renderService.preview(template: template, with: filledValues)
-    }
-
     /// Fehlermeldung
     var errorMessage: String?
 
