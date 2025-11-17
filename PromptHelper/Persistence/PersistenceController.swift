@@ -68,10 +68,9 @@ final class PersistenceController {
             print("🔄 Versuche Datenbank zurückzusetzen...")
 
             // Lösche die alte Datenbank
-            if let url = modelConfiguration.url {
-                try? FileManager.default.removeItem(at: url)
-                print("🗑️ Alte Datenbank gelöscht: \(url.path)")
-            }
+            let url = modelConfiguration.url
+            try? FileManager.default.removeItem(at: url)
+            print("🗑️ Alte Datenbank gelöscht: \(url.path)")
 
             // Versuche erneut einen Container zu erstellen
             do {
@@ -267,3 +266,4 @@ final class PersistenceController {
         }
     }
 }
+
