@@ -151,7 +151,6 @@ struct PromptEditorView: View {
                                 .strokeBorder(
                                     bindableViewModel.editContent.isEmpty ?
                                         DesignSystem.SemanticColor.accent.opacity(0.2) : Color.clear,
-                                    lineWidth: 2,
                                     style: StrokeStyle(lineWidth: 2, dash: [8, 4])
                                 )
                         )
