@@ -53,6 +53,9 @@ struct PromptGeneratorView: View {
                             )
                             .padding(.top, 40)
                         } else {
+                            // Live-Vorschau
+                            livePreviewCard
+
                             ForEach(placeholders, id: \.id) { templatePlaceholder in
                                 if let placeholder = templatePlaceholder.placeholder {
                                     PlaceholderInputView(
@@ -225,6 +228,72 @@ struct PromptGeneratorView: View {
                 .frame(width: 3),
             alignment: .leading
         )
+    }
+
+    // MARK: - Live Preview Card
+
+    @ViewBuilder
+    private var livePreviewCard: some View {
+        VStack(alignment: .leading, spacing: DesignSystem.Spacing.sm) {
+            HStack {
+                Image(systemName: "eye")
+                    .font(.system(size: DesignSystem.IconSize.sm))
+                    .foregroundStyle(DesignSystem.SemanticColor.accent)
+
+                Text("Live-Vorschau")
+                    .font(DesignSystem.Typography.subheadline.weight(.semibold))
+                    .foregroundStyle(DesignSystem.SemanticColor.primary)
+
+                Spacer()
+
+                // Zeige Anzahl noch fehlender Platzhalter
+                let unfilledCount = viewModel.currentPreview.extractPlaceholderKeys().count
+                if unfilledCount > 0 {
+                    HStack(spacing: 4) {
+                        Image(systemName: "exclamationmark.circle.fill")
+                            .font(.caption2)
+                        Text("\(unfilledCount) offen")
+                            .font(DesignSystem.Typography.caption2)
+                    }
+                    .foregroundStyle(DesignSystem.SemanticColor.warning)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 4)
+                    .background(DesignSystem.SemanticColor.warning.opacity(0.15))
+                    .cornerRadius(DesignSystem.CornerRadius.sm)
+                } else {
+                    HStack(spacing: 4) {
+                        Image(systemName: "checkmark.circle.fill")
+                            .font(.caption2)
+                        Text("Vollständig")
+                            .font(DesignSystem.Typography.caption2)
+                    }
+                    .foregroundStyle(DesignSystem.SemanticColor.successIcon)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 4)
+                    .background(DesignSystem.SemanticColor.successIcon.opacity(0.15))
+                    .cornerRadius(DesignSystem.CornerRadius.sm)
+                }
+            }
+
+            ScrollView {
+                Text(viewModel.currentPreview)
+                    .font(DesignSystem.Typography.body)
+                    .foregroundStyle(DesignSystem.SemanticColor.secondary)
+                    .textSelection(.enabled)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(DesignSystem.Spacing.sm)
+            }
+            .frame(maxHeight: 120)
+            .background(DesignSystem.SemanticColor.tertiaryBackground)
+            .cornerRadius(DesignSystem.CornerRadius.sm)
+        }
+        .padding(DesignSystem.Spacing.md)
+        .background(DesignSystem.SemanticColor.cardBackground)
+        .overlay(
+            RoundedRectangle(cornerRadius: DesignSystem.CornerRadius.md)
+                .strokeBorder(DesignSystem.SemanticColor.accent.opacity(0.3), lineWidth: 1)
+        )
+        .cornerRadius(DesignSystem.CornerRadius.md)
     }
 
     // MARK: - Generate Button

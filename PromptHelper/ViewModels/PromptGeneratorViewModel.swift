@@ -19,11 +19,16 @@ final class PromptGeneratorViewModel {
     /// Ausgefüllte Werte (key -> value)
     var filledValues: [String: String] = [:]
 
-    /// Generierter Prompt
+    /// Generierter Prompt (wird erst nach dem Generieren gesetzt)
     var generatedPrompt: String = ""
 
     /// Vorschau-Modus aktiv
     var showPreview: Bool = false
+
+    /// Computed Property für die Live-Vorschau
+    var currentPreview: String {
+        renderService.preview(template: template, with: filledValues)
+    }
 
     /// Fehlermeldung
     var errorMessage: String?
@@ -73,8 +78,7 @@ final class PromptGeneratorViewModel {
             }
         }
 
-        // Erstelle initiale Vorschau
-        updatePreview()
+        // Keine initiale Vorschau - generatedPrompt bleibt leer bis zum Generieren
     }
 
     // MARK: - Public Methods
@@ -102,11 +106,6 @@ final class PromptGeneratorViewModel {
             // Haptisches Feedback für Fehler
             HapticFeedback.error()
         }
-    }
-
-    /// Aktualisiert die Vorschau
-    func updatePreview() {
-        generatedPrompt = renderService.preview(template: template, with: filledValues)
     }
 
     /// Kopiert den generierten Prompt in die Zwischenablage
@@ -138,6 +137,7 @@ final class PromptGeneratorViewModel {
     /// Setzt alle Werte zurück
     func reset() {
         filledValues.removeAll()
+        generatedPrompt = ""
 
         // Setze Standardwerte
         for templatePlaceholder in template.placeholders ?? [] {
@@ -147,8 +147,6 @@ final class PromptGeneratorViewModel {
                 filledValues[placeholder.key] = defaultValue
             }
         }
-
-        updatePreview()
     }
 
     // MARK: - Private Methods
