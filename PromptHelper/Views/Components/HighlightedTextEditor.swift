@@ -19,7 +19,7 @@ struct HighlightedTextEditor: UIViewRepresentable {
     init(
         text: Binding<String>,
         placeholder: String = "",
-        highlightColor: UIColor = UIColor(DesignSystem.Colors.primary),
+        highlightColor: UIColor = UIColor(DesignSystem.SemanticColor.accent),
         font: UIFont = .systemFont(ofSize: 17)
     ) {
         self._text = text
