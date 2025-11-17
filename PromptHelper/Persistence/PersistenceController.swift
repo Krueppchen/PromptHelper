@@ -62,7 +62,31 @@ final class PersistenceController {
                 configurations: [modelConfiguration]
             )
         } catch {
+            #if DEBUG
+            // In DEBUG-Modus: Bei Migrationsproblemen Datenbank zurücksetzen
+            print("⚠️ Migration fehlgeschlagen: \(error)")
+            print("🔄 Versuche Datenbank zurückzusetzen...")
+
+            // Lösche die alte Datenbank
+            if let url = modelConfiguration.url {
+                try? FileManager.default.removeItem(at: url)
+                print("🗑️ Alte Datenbank gelöscht: \(url.path)")
+            }
+
+            // Versuche erneut einen Container zu erstellen
+            do {
+                container = try ModelContainer(
+                    for: schema,
+                    configurations: [modelConfiguration]
+                )
+                print("✅ Neue Datenbank erfolgreich erstellt")
+            } catch {
+                fatalError("Could not create ModelContainer after reset: \(error)")
+            }
+            #else
+            // In RELEASE-Modus: Fehler weitergeben
             fatalError("Could not create ModelContainer: \(error)")
+            #endif
         }
 
         // Seed-Daten für Entwicklung/Testing (nur wenn leer)

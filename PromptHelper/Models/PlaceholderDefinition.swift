@@ -32,7 +32,7 @@ final class PlaceholderDefinition {
     var isGlobal: Bool
 
     /// True = Pflichtfeld, muss ausgefüllt werden
-    var isRequired: Bool
+    var isRequired: Bool = false
 
     /// Optionaler Standardwert
     var defaultValue: String?
