@@ -139,7 +139,7 @@ struct PromptEditorView: View {
                     HighlightedTextEditor(
                         text: $bindableViewModel.editContent,
                         placeholder: "Beginnen Sie mit dem Schreiben...",
-                        highlightColor: UIColor(DesignSystem.Colors.primary)
+                        highlightColor: UIColor(DesignSystem.SemanticColor.primary)
                     )
                     .opacity(bindableViewModel.editContent.isEmpty ? 0.5 : 1)
                 }
